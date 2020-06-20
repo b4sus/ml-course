@@ -26,7 +26,7 @@ class Passenger:
 
 passengers = []
 
-with open('/home/juraj/Downloads/train.csv', 'r') as train_csv:
+with open('../train.csv', 'r') as train_csv:
     dict_reader = csv.DictReader(train_csv)
     for row in dict_reader:
         passengers.append(Passenger(row))
