@@ -1,6 +1,7 @@
-import ml
+import ml.ml as ml
 import unittest
 import numpy as np
+
 
 class TestMlMethods(unittest.TestCase):
 
@@ -20,3 +21,7 @@ class TestMlMethods(unittest.TestCase):
         self.assert_equal_ndarrays(v * 2, np.array([[2, 6, 4]]).T)
 
         self.assert_equal_ndarrays(np.log10(np.array([[1, 10, 100]]).T), np.array([[0, 1, 2]]).T)
+
+
+if __name__ == '__main__':
+    unittest.main()

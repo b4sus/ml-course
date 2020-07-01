@@ -1,11 +1,12 @@
 import csv
 import numpy as np
+import ml.ml as ml
 
 class Passenger:
     def __init__(self, param_dict):
         self.id = param_dict['PassengerId']
         self.name = param_dict['Name']
-        self.survived = bool(param_dict['Survived'])
+        self.survived = bool(int(param_dict['Survived']))
         if param_dict['Age']:
             self.age = float(param_dict['Age'])
         else:
@@ -20,8 +21,8 @@ class Passenger:
         self.cabin = param_dict['Cabin']
         self.embarked = param_dict['Embarked']
 
-    def __repr__(self):
-        return f'{self.id} - {self.name}'
+    def __str__(self):
+        return f'{self.id} - {self.name} - {self.survived}'
 
 
 passengers = []
@@ -40,4 +41,6 @@ for passenger in passengers:
     y[idx] = 1.0 if passenger.survived else 0.0
     idx = idx + 1
 
-print(X)
+print(X, y)
+
+theta = ml.gradient_descent(X, y.T, ml.logistic_regression_cost, ml.logistic_regression_cost_derivative)
