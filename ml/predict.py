@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def predict(x_m, theta, normalizer, hypothesis):
     (m, n) = np.shape(x_m)
     assert np.shape(theta) == (n + 1, 1)
