@@ -48,15 +48,27 @@ def logistic_regression_hypothesis(x_m, theta):
     return 1 / (1 + (np.e ** -z))
 
 
-def logistic_regression_cost(x_m, y, theta, h_func=logistic_regression_hypothesis):
-    h_x = h_func(x_m, theta)
+def logistic_regression_cost(x_m, y, theta):
+    h_x = logistic_regression_hypothesis(x_m, theta)
     costs = -y * np.log(h_x) - (1 - y) * np.log(1 - h_x)
     return costs.sum() / x_m.shape[0]
 
 
-def logistic_regression_cost_derivative(x_m, y, theta, h_func=logistic_regression_hypothesis):
-    h_x = h_func(x_m, theta)
+def logistic_regression_cost_derivative(x_m, y, theta):
+    h_x = logistic_regression_hypothesis(x_m, theta)
     return ((h_x - y).T @ x_m).T
+
+
+def logistic_regression_cost_gradient(theta, x_m, y):
+    """
+    Combines functions logistic_regression_cost and logistic_regression_cost_derivative.
+    :param theta:
+    :param x_m:
+    :param y:
+    :return: tuple with function results of logistic_regression_cost and logistic_regression_cost_derivative
+    """
+    theta = theta.reshape((len(theta), 1))
+    return logistic_regression_cost(x_m, y, theta), logistic_regression_cost_derivative(x_m, y, theta)
 
 
 def gradient_descent(x_m, y, cost_func, cost_func_derivative, alpha=0.01, num_iter=1000):

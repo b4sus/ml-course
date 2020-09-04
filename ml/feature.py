@@ -22,3 +22,5 @@ class FeatureNormalizer(object):
             normalized_feature = ((feature - means[feature_idx]) / stds[feature_idx]).T.reshape((m, 1))
             normalized_x_m = np.hstack((normalized_x_m, normalized_feature))
         return normalized_x_m, means, stds
+
+def makePolynomial(x_m, grade=6):
