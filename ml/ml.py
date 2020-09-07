@@ -48,10 +48,13 @@ def logistic_regression_hypothesis(x_m, theta):
     return 1 / (1 + (np.e ** -z))
 
 
-def logistic_regression_cost(x_m, y, theta):
+def logistic_regression_cost(x_m, y, theta, regularization=0):
     h_x = logistic_regression_hypothesis(x_m, theta)
     costs = -y * np.log(h_x) - (1 - y) * np.log(1 - h_x)
-    return costs.sum() / x_m.shape[0]
+    cost = costs.sum() / x_m.shape[0]
+    if regularization:
+        cost = cost + ((theta[1:, :]**2).sum() * regularization) / (2 * x_m.shape[0])
+    return cost
 
 
 def logistic_regression_cost_derivative(x_m, y, theta):
@@ -71,12 +74,19 @@ def logistic_regression_cost_gradient(theta, x_m, y):
     return logistic_regression_cost(x_m, y, theta), logistic_regression_cost_derivative(x_m, y, theta)
 
 
-def gradient_descent(x_m, y, cost_func, cost_func_derivative, alpha=0.01, num_iter=1000):
+def gradient_descent(x_m, y, cost_func, cost_func_derivative, alpha=0.01, num_iter=1000, regularization=0):
     (m, n) = x_m.shape
     theta = np.zeros((n, 1))
     costs = np.empty((num_iter, 1))
     for i in range(num_iter):
         costs[i, 0] = cost_func(x_m, y, theta)
         der = (cost_func_derivative(x_m, y, theta) / m)
+
+        # move this to logistic_regression_cost_derivative
+        if regularization:
+            reg = np.vstack((np.array([[0]]), theta[1:, :]))
+            reg = (regularization / m) * reg
+            der = der - reg
+
         theta = theta - alpha * der
     return theta, costs
