@@ -4,7 +4,7 @@ import numpy as np
 def predict(x_m, theta, hypothesis, normalizer=None):
     (m, n) = x_m.shape
 
-    assert theta.shape == (n + 1, 1), "Expecting x_m not to include the 1s as the first column"
+    assert theta.shape == (n + 1, 1), "theta shape to match number of rows in X when X doesn't contain the 1s column"
 
     if normalizer:
         x_m = normalizer.normalize(x_m)

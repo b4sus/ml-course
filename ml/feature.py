@@ -19,24 +19,33 @@ class FeatureNormalizer(object):
             feature = x_m[:, feature_idx]
             means[feature_idx] = feature.mean()
             stds[feature_idx] = feature.std()
+            if stds[feature_idx] == 0:
+                raise Exception("Feature {} has 0 standard deviation".format(feature_idx))
             normalized_feature = ((feature - means[feature_idx]) / stds[feature_idx]).T.reshape((m, 1))
             normalized_x_m = np.hstack((normalized_x_m, normalized_feature))
         return normalized_x_m, means, stds
 
+def reduce_features_without_std(X):
+    """
+    Sometimes making features polynomial can lead to feature with standard deviation == 0.
+    Eg feature x0 is gender {-1, 1}, then x0^2 will always be 1 and that feature will not contribute
+    :param X:
+    :return:
+    """
+    # TODO
 
-def make_polynomial(x_m, degree=6):
-    (m, n) = x_m.shape
-    assert n == 2
-    new_x_m = np.empty([0, 0])
-    for i in range(m):
-        poly_feature = __make_polynomial(x_m[i, 0], x_m[i, 1], degree)
-        new_x_m = np.vstack((new_x_m, poly_feature))
-    return new_x_m
+def one_hot_encode(X, feature_idx):
+    distinct_values = set(X[:, feature_idx])
 
+    new_feature_map = {}
 
-def __make_polynomial(x1, x2, degree):
-    x = np.array([1])
-    for i in range(1, degree):
-        for j in range(i):
-            x = np.hstack((x, x1**(i-j) * x2**(j)))
-    return x
+    for (idx, distinct_value) in enumerate(distinct_values):
+        new_feature_map[distinct_value] = np.zeros((1, len(distinct_values)))
+        new_feature_map[distinct_value][0, idx] = 1
+
+    X_new_features = np.empty((0, len(distinct_values)))
+
+    for row in X:
+        X_new_features = np.vstack((X_new_features, new_feature_map[row[feature_idx]]))
+
+    return np.hstack((X[:, :feature_idx], X_new_features, X[:, feature_idx + 1:]))
