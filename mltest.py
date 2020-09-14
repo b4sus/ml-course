@@ -37,6 +37,16 @@ class TestMlMethods(unittest.TestCase):
         ])
         self.assert_equal_ndarrays(X_expected, feature.one_hot_encode(X, 1))
 
+    def test_reduce_features_without_std(self):
+        X = np.array([
+            [2, 2, 1, 3],
+            [2, 3, 1, 0]
+        ])
+        X_expected = np.array([
+            [2, 3],
+            [3, 0]
+        ])
+        self.assert_equal_ndarrays(X_expected, feature.reduce_features_without_std(X))
 
 if __name__ == '__main__':
     unittest.main()

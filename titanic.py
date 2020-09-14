@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 np.seterr(all="raise")
 
+
 class Passenger:
     def __init__(self, param_dict):
         self.id = param_dict['PassengerId']
@@ -40,6 +41,9 @@ with open('data/titanic-train.csv', 'r') as train_csv:
     for row in dict_reader:
         passengers.append(Passenger(row))
 
+# passengers = [p for p in passengers if p.fare < 500] really huge (well above average)
+# entries can cause division by 0 when they are multiplied by polynomial features
+
 X = np.empty((0, 4))
 y = np.empty((len(passengers), 1))
 
@@ -51,23 +55,26 @@ for passenger in passengers:
 
 plt.plot()
 
-print("Vanilla X:\n{}".format(X))
+print("Vanilla X({} {}):\n{}".format(*X.shape, X))
 
 X = feature.one_hot_encode(X, 2)
 
-print("Ticket encoded X:\n{}".format(X))
+print("Ticket encoded X({} {}):\n{}".format(*X.shape, X))
 
-polynomial_features = PolynomialFeatures(4, include_bias=False)
+polynomial_features = PolynomialFeatures(2, include_bias=False, interaction_only=True)
 X = polynomial_features.fit_transform(X)
 print(polynomial_features.get_feature_names())
-print("Polynomial X:\n{}".format(X))
+print("Polynomial X({} {}):\n{}".format(*X.shape, X))
+
+X = feature.reduce_features_without_std(X)
+print("Reduced features X({} {}):\n{}".format(*X.shape, X))
 
 normalizer = feature.FeatureNormalizer(X)
 X = normalizer.normalized_x_m
-X = np.hstack((np.ones((len(passengers), 1)), X))
+X = np.hstack((np.ones((X.shape[0], 1)), X))
 # X = Normalizer().fit_transform(X)
 
-print("Final X\n{}".format(X))
+print("Final X({} {}):\n{}".format(*X.shape, X))
 
 # (theta, costs) = ml.gradient_descent(X, y, ml.logistic_regression_cost, ml.logistic_regression_cost_derivative)
 

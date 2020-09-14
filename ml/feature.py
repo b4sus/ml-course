@@ -25,14 +25,20 @@ class FeatureNormalizer(object):
             normalized_x_m = np.hstack((normalized_x_m, normalized_feature))
         return normalized_x_m, means, stds
 
+
 def reduce_features_without_std(X):
     """
     Sometimes making features polynomial can lead to feature with standard deviation == 0.
     Eg feature x0 is gender {-1, 1}, then x0^2 will always be 1 and that feature will not contribute
-    :param X:
-    :return:
+    :param X: of shape m x n
+    :return: copy of input (shape m x o, where o < n) omitting the columns with std == 0
     """
-    # TODO
+    (m, n) = X.shape
+    stds = np.zeros(n)
+    for feature_idx in range(n):
+        feature = X[:, feature_idx]
+        stds[feature_idx] = feature.std()
+    return X[:, np.nonzero(stds)].reshape((m, -1))
 
 def one_hot_encode(X, feature_idx):
     distinct_values = set(X[:, feature_idx])
