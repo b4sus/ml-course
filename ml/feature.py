@@ -38,7 +38,11 @@ def reduce_features_without_std(X):
     for feature_idx in range(n):
         feature = X[:, feature_idx]
         stds[feature_idx] = feature.std()
+
+    # TODO: return indices, of feature being removed - they are need for testing set
+    #  (to remove the same features from testing set which were removed from training set)
     return X[:, np.nonzero(stds)].reshape((m, -1))
+
 
 def one_hot_encode(X, feature_idx):
     distinct_values = set(X[:, feature_idx])

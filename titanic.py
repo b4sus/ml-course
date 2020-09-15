@@ -41,17 +41,22 @@ with open('data/titanic-train.csv', 'r') as train_csv:
     for row in dict_reader:
         passengers.append(Passenger(row))
 
+train_passengers = passengers[:int(len(passengers) * 0.8)]
+test_passengers = passengers[int(len(passengers) * 0.8):]
+
 # passengers = [p for p in passengers if p.fare < 500] really huge (well above average)
 # entries can cause division by 0 when they are multiplied by polynomial features
 
-X = np.empty((0, 4))
-y = np.empty((len(passengers), 1))
+def create_feature_matrix(passengers):
+    X = np.empty((0, 4))
+    y = np.empty((len(passengers), 1))
+    for (idx, passenger) in enumerate(passengers):
+        X = np.vstack((X, [passenger.sex, passenger.age, passenger.ticket_class, passenger.fare]))
+        y[idx, 0] = 1.0 if passenger.survived else 0.0
+    return X, y
 
-idx = 0
-for passenger in passengers:
-    X = np.vstack((X, [passenger.sex, passenger.age, passenger.ticket_class, passenger.fare]))
-    y[idx, 0] = 1.0 if passenger.survived else 0.0
-    idx = idx + 1
+
+(X, y) = create_feature_matrix(passengers)
 
 plt.plot()
 
