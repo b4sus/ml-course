@@ -9,6 +9,18 @@ class FeatureNormalizer(object):
     def normalize(self, x):
         return (x - self.means) / self.stds
 
+    def normalize_matrix(self, X):
+        (m, n) = X.shape
+
+        X_norm = np.empty((m, 0), float)
+
+        for x in X:
+            x_norm = self.normalize(x)
+            # TODO issue here
+            X_norm = np.vstack((X_norm, x_norm))
+
+        return X_norm
+
     @staticmethod
     def __normalize(x_m):
         (m, n) = x_m.shape
@@ -39,9 +51,8 @@ def reduce_features_without_std(X):
         feature = X[:, feature_idx]
         stds[feature_idx] = feature.std()
 
-    # TODO: return indices, of feature being removed - they are need for testing set
-    #  (to remove the same features from testing set which were removed from training set)
-    return X[:, np.nonzero(stds)].reshape((m, -1))
+    non_zero_indices = np.nonzero(stds)
+    return X[:, non_zero_indices].reshape((m, -1)), non_zero_indices
 
 
 def one_hot_encode(X, feature_idx):

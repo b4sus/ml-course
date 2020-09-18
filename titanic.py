@@ -1,8 +1,10 @@
 import csv
+import random
 import numpy as np
 import ml.ml as ml
 import ml.predict as predict
 import ml.feature as feature
+import ml.pipeline as pipeline
 import scipy.optimize as op
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.preprocessing import Normalizer
@@ -41,6 +43,8 @@ with open('data/titanic-train.csv', 'r') as train_csv:
     for row in dict_reader:
         passengers.append(Passenger(row))
 
+# random.shuffle(passengers)
+
 train_passengers = passengers[:int(len(passengers) * 0.8)]
 test_passengers = passengers[int(len(passengers) * 0.8):]
 
@@ -56,39 +60,22 @@ def create_feature_matrix(passengers):
     return X, y
 
 
-(X, y) = create_feature_matrix(passengers)
+(X_train, y) = create_feature_matrix(train_passengers)
 
-plt.plot()
+pipeline = pipeline.Pipeline()
+pipeline.one_hot_encode(2)
+pipeline.polynomial(2, include_bias=False, interaction_only=True)
+pipeline.reduce_features_without_std()
+pipeline.normalize()
+pipeline.bias()
 
-print("Vanilla X({} {}):\n{}".format(*X.shape, X))
+(theta_from_pipeline, X_processed) = pipeline.execute_train(X_train, y)
 
-X = feature.one_hot_encode(X, 2)
-
-print("Ticket encoded X({} {}):\n{}".format(*X.shape, X))
-
-polynomial_features = PolynomialFeatures(2, include_bias=False, interaction_only=True)
-X = polynomial_features.fit_transform(X)
-print(polynomial_features.get_feature_names())
-print("Polynomial X({} {}):\n{}".format(*X.shape, X))
-
-X = feature.reduce_features_without_std(X)
-print("Reduced features X({} {}):\n{}".format(*X.shape, X))
-
-normalizer = feature.FeatureNormalizer(X)
-X = normalizer.normalized_x_m
-X = np.hstack((np.ones((X.shape[0], 1)), X))
-# X = Normalizer().fit_transform(X)
-
-print("Final X({} {}):\n{}".format(*X.shape, X))
-
-# (theta, costs) = ml.gradient_descent(X, y, ml.logistic_regression_cost, ml.logistic_regression_cost_derivative)
-
-(theta, num_of_evaluations, return_code) = op.fmin_tnc(func=ml.logistic_regression_cost_gradient,
-                                                       x0=np.zeros((X.shape[1], 1)),
-                                                       args=(X, y, 0))
-print("Return code: {}".format(return_code))
-
-theta = theta.reshape((X.shape[1], 1))
-predictions = predict.predict(X[:, 1:], theta, ml.logistic_regression_hypothesis)
+predictions = predict.predict(X_processed[:, 1:], theta_from_pipeline, ml.logistic_regression_hypothesis)
 
 print(np.mean(predictions == y))
+
+(X_test, y_test) = create_feature_matrix(test_passengers)
+X_test = pipeline.process_test(X_test)
+
+print("X_test({} {}):\n{}".format(*X_test.shape, X_test))
