@@ -70,7 +70,7 @@ class Pipeline:
     def bias(self):
         self.steps.append(BiasStep())
 
-    def execute_train(self, X, y, ):
+    def execute_train(self, X, y, /, *, regularization=0):
         print("Vanilla X({} {}):\n{}".format(*X.shape, X))
         for step in self.steps:
             X = step.apply(X)
@@ -78,7 +78,7 @@ class Pipeline:
 
         (theta, num_of_evaluations, return_code) = op.fmin_tnc(func=ml.logistic_regression_cost_gradient,
                                                                x0=np.zeros((X.shape[1], 1)),
-                                                               args=(X, y, 1))
+                                                               args=(X, y, regularization))
 
         return theta.reshape((X.shape[1], 1)), X
 

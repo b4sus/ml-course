@@ -12,11 +12,10 @@ class FeatureNormalizer(object):
     def normalize_matrix(self, X):
         (m, n) = X.shape
 
-        X_norm = np.empty((m, 0), float)
+        X_norm = np.empty((0, n), float)
 
         for x in X:
             x_norm = self.normalize(x)
-            # TODO issue here
             X_norm = np.vstack((X_norm, x_norm))
 
         return X_norm
@@ -51,22 +50,35 @@ def reduce_features_without_std(X):
         feature = X[:, feature_idx]
         stds[feature_idx] = feature.std()
 
-    non_zero_indices = np.nonzero(stds)
+    non_zero_indices = np.nonzero(stds)[0]
     return X[:, non_zero_indices].reshape((m, -1)), non_zero_indices
 
 
-def one_hot_encode(X, feature_idx):
-    distinct_values = set(X[:, feature_idx])
+def one_hot_encode(X, *feature_indices):
+    def one_hot_encode(X, feature_idx):
+        distinct_values = set(X[:, feature_idx])
 
-    new_feature_map = {}
+        new_feature_map = {}
 
-    for (idx, distinct_value) in enumerate(distinct_values):
-        new_feature_map[distinct_value] = np.zeros((1, len(distinct_values)))
-        new_feature_map[distinct_value][0, idx] = 1
+        for (idx, distinct_value) in enumerate(distinct_values):
+            new_feature_map[distinct_value] = np.zeros((1, len(distinct_values)))
+            new_feature_map[distinct_value][0, idx] = 1
 
-    X_new_features = np.empty((0, len(distinct_values)))
+        X_new_features = np.empty((0, len(distinct_values)))
 
-    for row in X:
-        X_new_features = np.vstack((X_new_features, new_feature_map[row[feature_idx]]))
+        for row in X:
+            X_new_features = np.vstack((X_new_features, new_feature_map[row[feature_idx]]))
 
-    return np.hstack((X[:, :feature_idx], X_new_features, X[:, feature_idx + 1:]))
+        return np.hstack((X[:, :feature_idx], X_new_features, X[:, feature_idx + 1:])), len(distinct_values)
+
+    feature_indices = np.sort(feature_indices)
+
+    X_new = X
+
+    total_new_columns = 0
+    for feature_idx in feature_indices:
+        feature_idx_new = feature_idx + (0 if total_new_columns == 0 else total_new_columns - 1)
+        (X_new, new_columns) = one_hot_encode(X_new, feature_idx_new)
+        total_new_columns += new_columns
+
+    return X_new
