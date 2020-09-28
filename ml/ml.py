@@ -45,6 +45,10 @@ def logistic_regression_hypothesis(x_m, theta):
 
     assert z.shape == (m, 1)
 
+    return sigmoid(z)
+
+
+def sigmoid(z):
     return 1 / (1 + (np.e ** -z))
 
 
@@ -101,3 +105,21 @@ def gradient_descent(x_m, y, cost_func, cost_func_derivative, alpha=0.01, num_it
         der = cost_func_derivative(x_m, y, theta, regularization)
         theta = theta - alpha * der
     return theta, costs
+
+
+def feed_forward(X, Theta_matrices):
+    """
+    Feeds the inputs X through neural network represented by Theta matrices.
+    :param X: inputs: m x n (m examples, n features)
+    :param Theta_matrices: Theta matrix for each layer
+    :return: matrix of shape m x #neurons_in_output_layer
+    """
+    (m, n) = X.shape
+
+    A = X.T
+    for Theta in Theta_matrices:
+        A = np.vstack((np.ones((1, m)), A))
+        Z = Theta @ A
+        A = sigmoid(Z)
+
+    return A.T

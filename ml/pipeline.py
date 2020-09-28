@@ -82,6 +82,23 @@ class Pipeline:
 
         return theta.reshape((X.shape[1], 1)), X
 
+    def one_vs_all(self, X, y, /, *, regularization=0):
+        (m, n) = X.shape
+
+        y_flat = y.flatten()
+
+        distinct_outputs = set(y_flat)
+
+        thetas = []
+
+        for distinct_output in distinct_outputs:
+            y_single_output = np.zeros(m)
+            y_single_output[y_flat == distinct_output] = 1
+            (theta, X_processed) = self.execute_train(X, y_single_output.reshape((m, 1)), regularization=regularization)
+            thetas.append(theta)
+
+        return thetas
+
     def process_test(self, X):
         for step in self.steps:
             X = step.apply_test(X)
