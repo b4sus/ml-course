@@ -107,19 +107,35 @@ def gradient_descent(x_m, y, cost_func, cost_func_derivative, alpha=0.01, num_it
     return theta, costs
 
 
-def feed_forward(X, Theta_matrices):
+def feed_forward(X, Thetas):
     """
     Feeds the inputs X through neural network represented by Theta matrices.
     :param X: inputs: m x n (m examples, n features)
-    :param Theta_matrices: Theta matrix for each layer
+    :param Thetas: Theta matrix for each layer
     :return: matrix of shape m x #neurons_in_output_layer
     """
     (m, n) = X.shape
 
     A = X.T
-    for Theta in Theta_matrices:
+    for Theta in Thetas:
         A = np.vstack((np.ones((1, m)), A))
         Z = Theta @ A
         A = sigmoid(Z)
 
     return A.T
+
+
+def neural_network_cost(X, Y, Thetas):
+    (m, n) = X.shape
+
+    H_X = feed_forward(X, Thetas)
+
+    total_cost = 0
+
+    for i in range(m):
+        y = Y[i].T
+        h_x = H_X[i].T
+        cost_i = -y * np.log(h_x) - (1 - y) * np.log(1 - h_x)
+        total_cost += cost_i.sum()
+
+    return total_cost / m
