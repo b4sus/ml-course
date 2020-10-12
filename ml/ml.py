@@ -125,7 +125,7 @@ def feed_forward(X, Thetas):
     return A.T
 
 
-def neural_network_cost(X, Y, Thetas):
+def neural_network_cost(X, Y, Thetas, regularization_lambda=0):
     (m, n) = X.shape
 
     H_X = feed_forward(X, Thetas)
@@ -138,4 +138,36 @@ def neural_network_cost(X, Y, Thetas):
         cost_i = -y * np.log(h_x) - (1 - y) * np.log(1 - h_x)
         total_cost += cost_i.sum()
 
-    return total_cost / m
+    regularization = 0
+    if (regularization_lambda):
+        regularization_sum = 0
+        for Theta in Thetas:
+            Theta_without_bias = Theta[:, 1:]
+            regularization_sum += (Theta_without_bias ** 2).sum((0, 1))
+        regularization = regularization_sum
+
+    return total_cost / m + regularization_lambda / (2 * m) * regularization
+
+
+def sigmoid_gradient(z):
+    sigmoid_z = sigmoid(z)
+    return sigmoid_z * (1 - sigmoid_z)
+
+
+def back_propagation(X, Y, Thetas):
+    for (idx, x) in enumerate(X):
+        list_a = []
+        list_a.append(np.vstack((np.array([1]), x.reshape((len(x), 1)))))  # needs to go to for
+        list_z = []
+        list_z.append(None)
+        for Theta in Thetas:
+            list_z.append(Theta @ list_a[-1])
+            list_a.append(sigmoid(list_z[-1]))
+
+        delta_k = list_a[-1] - Y[idx].T
+        print("as")
+
+
+def initialize_random_theta(shape, epsilon_init=0.12):
+    rng = np.random.default_rng()
+    return rng.random((shape[0], shape[1] + 1)) * 2 * epsilon_init - epsilon_init

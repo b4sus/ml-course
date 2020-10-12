@@ -23,7 +23,9 @@ theta_1 = weights_mat["Theta2"]
 print(theta_0.shape)
 print(theta_1.shape)
 
-print(ml.neural_network_cost(X, Y, [theta_0, theta_1]))
+print(ml.neural_network_cost(X, Y, [theta_0, theta_1], 1))
+
+print(ml.initialize_random_theta((2, 3)))
 
 Output = ml.feed_forward(X, [theta_0, theta_1])
 
@@ -32,3 +34,8 @@ predictions = np.argmax(Output, axis=1).reshape((X.shape[0], 1))
 predictions = predictions + 1
 
 print(np.mean(predictions == y))
+
+theta_0 = ml.initialize_random_theta((25, 400))
+theta_1 = ml.initialize_random_theta((10, 25))
+
+ml.back_propagation(X, Y, [theta_0, theta_1])
