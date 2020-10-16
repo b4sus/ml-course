@@ -155,17 +155,25 @@ def sigmoid_gradient(z):
 
 
 def back_propagation(X, Y, Thetas):
+    (m, n) = X.shape
+    Deltas = [np.zeros((Theta.shape[1] - 1, Theta.shape[0])) for Theta in Thetas]  # probably needs to have same dim as Thetas
     for (idx, x) in enumerate(X):
         list_a = []
-        list_a.append(np.vstack((np.array([1]), x.reshape((len(x), 1)))))  # needs to go to for
+        list_a.append(x.reshape((len(x), 1)))
         list_z = []
         list_z.append(None)
         for Theta in Thetas:
+            list_a[-1] = np.vstack((np.array([1]), list_a[-1]))
             list_z.append(Theta @ list_a[-1])
             list_a.append(sigmoid(list_z[-1]))
 
-        delta_k = list_a[-1] - Y[idx].T
-        print("as")
+        list_z.pop()
+
+        delta_last_layer = list_a[-1] - Y[idx].reshape((Y.shape[1], 1))
+        # Deltas[-1] =
+        for Theta in Thetas[-1:0:-1]:
+            delta_current_layer = Theta.T @ delta_last_layer * sigmoid_gradient(list_z.pop())  # I probably need to work with a
+
 
 
 def initialize_random_theta(shape, epsilon_init=0.12):
