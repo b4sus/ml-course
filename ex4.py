@@ -38,4 +38,6 @@ print(np.mean(predictions == y))
 theta_0 = ml.initialize_random_theta((25, 400))
 theta_1 = ml.initialize_random_theta((10, 25))
 
-ml.back_propagation(X, Y, [theta_0, theta_1])
+Deltas = ml.back_propagation(X, Y, [theta_0, theta_1])
+
+ml.gradient_check()

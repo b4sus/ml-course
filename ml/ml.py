@@ -148,6 +148,15 @@ def neural_network_cost(X, Y, Thetas, regularization_lambda=0):
 
     return total_cost / m + regularization_lambda / (2 * m) * regularization
 
+def neural_network_cost_unrolled(X, Y, theta_vec, shapes, regularization_lambda=0):
+    Thetas = []
+    from_idx = 0
+    for shape in shapes:
+        to_idx = from_idx + shape[0] * shape[1]
+        Thetas.append(theta_vec[from_idx:to_idx, :].reshape(shape))
+        from_idx = to_idx
+    return neural_network_cost(X, Y, Thetas, regularization_lambda)
+
 
 def sigmoid_gradient(z):
     sigmoid_z = sigmoid(z)
@@ -156,7 +165,7 @@ def sigmoid_gradient(z):
 
 def back_propagation(X, Y, Thetas):
     (m, n) = X.shape
-    Deltas = [np.zeros((Theta.shape[1] - 1, Theta.shape[0])) for Theta in Thetas]  # probably needs to have same dim as Thetas
+    Deltas = [np.zeros(Theta.shape) for Theta in Thetas]  # probably needs to have same dim as Thetas
     for (idx, x) in enumerate(X):
         list_a = []
         list_a.append(x.reshape((len(x), 1)))
@@ -169,11 +178,63 @@ def back_propagation(X, Y, Thetas):
 
         list_z.pop()
 
-        delta_last_layer = list_a[-1] - Y[idx].reshape((Y.shape[1], 1))
-        # Deltas[-1] =
-        for Theta in Thetas[-1:0:-1]:
-            delta_current_layer = Theta.T @ delta_last_layer * sigmoid_gradient(list_z.pop())  # I probably need to work with a
+        delta_last_layer = list_a.pop() - Y[idx].reshape((Y.shape[1], 1))
+        for (layer_idx, (Theta, Delta)) in list(enumerate(zip(Thetas, Deltas)))[-1::-1]:
+            Delta = Delta + delta_last_layer @ list_a.pop().T
+            if layer_idx > 0:
+                delta_last_layer = (Theta.T @ delta_last_layer)[1:, :] * sigmoid_gradient(list_z.pop())
+    return Deltas
 
+def back_propagation_unrolled(X, Y, theta_vec, shapes):
+    Thetas = []
+    from_idx = 0
+    for shape in shapes:
+        to_idx = from_idx + shape[0] * shape[1]
+        Thetas.append(theta_vec[from_idx:to_idx, :].reshape(shape))
+        from_idx = to_idx
+
+    Deltas = back_propagation(X, Y, Thetas)
+    return flatten_and_stack(Deltas)[0]
+
+def neural_network_cost_gradient(X, Y, theta_vec, regularization_lambda=0):
+
+    return neural_network_cost(X, Y, Thetas, regularization_lambda), flatten_and_stack(back_propagation(X, Y, Thetas))
+
+def gradient_check():
+    Theta0 = initialize_random_theta((5, 3))
+    Theta1 = initialize_random_theta((3, 5))
+    X = initialize_random_theta((5, 2))
+    Y = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 1],
+                  [1, 0, 0],
+                  [0, 1, 0]])
+
+    (theta_vec, shapes) = flatten_and_stack([Theta0, Theta1])
+    numerical_gradient = compute_numerical_gradient(X, Y, theta_vec, shapes)
+    back_prop_gradient = back_propagation_unrolled(X, Y, theta_vec, shapes)
+    print(np.hstack(back_prop_gradient, numerical_gradient))
+
+
+def compute_numerical_gradient(X, Y, theta_vec, shapes, epsilon=0.0001):
+    numerical_gradient = np.zeros(theta_vec.shape)
+    perturbation = np.zeros(theta_vec.shape)
+    for i in range(len(theta_vec)):
+        perturbation[i, 0] = epsilon
+        loss1 = neural_network_cost_unrolled(X, Y, theta_vec + perturbation, shapes)
+        loss2 = neural_network_cost_unrolled(X, Y, theta_vec - perturbation, shapes)
+        numerical_gradient[i, 0] = (loss1 - loss2) / (2 * epsilon)
+        perturbation[i, 0] = 0
+    return numerical_gradient
+
+
+def flatten_and_stack(Matrices):
+    stack = np.empty((0, 1))
+    shapes = []
+    for M in Matrices:
+        shapes.append(M.shape)
+        stack = np.vstack((stack, M.flatten().reshape((-1, 1))))
+    return stack, shapes
 
 
 def initialize_random_theta(shape, epsilon_init=0.12):
