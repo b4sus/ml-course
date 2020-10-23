@@ -40,4 +40,4 @@ theta_1 = ml.initialize_random_theta((10, 25))
 
 Deltas = ml.back_propagation(X, Y, [theta_0, theta_1])
 
-ml.gradient_check()
+ml.neural_network_gradient_check()
