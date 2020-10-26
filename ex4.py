@@ -24,6 +24,7 @@ print(theta_0.shape)
 print(theta_1.shape)
 
 print(ml.neural_network_cost(X, Y, [theta_0, theta_1], 1))
+print(ml.neural_network_cost_gradient(X, Y, [theta_0, theta_1], 1)[0])
 
 print(ml.initialize_random_theta((2, 3)))
 
@@ -38,6 +39,4 @@ print(np.mean(predictions == y))
 theta_0 = ml.initialize_random_theta((25, 400))
 theta_1 = ml.initialize_random_theta((10, 25))
 
-Deltas = ml.back_propagation(X, Y, [theta_0, theta_1])
-
-ml.neural_network_gradient_check()
+Deltas = ml.neural_network_cost_gradient(X, Y, [theta_0, theta_1], 1)[1]
