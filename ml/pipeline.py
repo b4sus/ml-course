@@ -4,12 +4,14 @@ import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 import scipy.optimize as op
 
+
 class Step:
     def apply(self, X):
         pass
 
     def apply_test(self, X):
         return self.apply(X)
+
 
 class OneHotEncodeStep(Step):
     def __init__(self, indices):
@@ -76,11 +78,14 @@ class Pipeline:
             X = step.apply(X)
             print("After {} X({} {}):\n{}".format(step, *X.shape, X))
 
-        (theta, num_of_evaluations, return_code) = op.fmin_tnc(func=ml.logistic_regression_cost_gradient,
-                                                               x0=np.zeros((X.shape[1], 1)),
-                                                               args=(X, y, regularization))
+        result = op.minimize(fun=ml.logistic_regression_cost_gradient,
+                             x0=np.zeros((X.shape[1], 1)),
+                             args=(X, y, regularization),
+                             method="CG",
+                             jac=True,
+                             options={"maxiter": 400, "disp": True})
 
-        return theta.reshape((X.shape[1], 1)), X
+        return result.x.reshape((X.shape[1], 1)), X
 
     def one_vs_all(self, X, y, /, *, regularization=0):
         (m, n) = X.shape

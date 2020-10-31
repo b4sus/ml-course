@@ -2,6 +2,7 @@ import numpy as np
 from functools import partial
 import ml
 
+
 def neural_network_gradient_check():
     Theta0 = ml.initialize_random_theta((5, 3))
     Theta1 = ml.initialize_random_theta((3, 5))
@@ -12,10 +13,10 @@ def neural_network_gradient_check():
                   [1, 0, 0],
                   [0, 1, 0]])
 
-    (theta_vec, shapes) = ml.flatten_and_stack([Theta0, Theta1])
-    costFunction = partial(ml.neural_network_cost_unrolled, X=X, Y=Y, shapes=shapes)
-    numerical_gradient = compute_numerical_gradient(costFunction, theta_vec)
-    back_prop_gradient = ml.back_propagation_unrolled(X, Y, theta_vec, shapes)
+    (theta, shapes) = ml.flatten_and_stack([Theta0, Theta1])
+    costFunction = partial(ml.neural_network_cost_unrolled, X=X, Y=Y, shapes=shapes, regularization_lambda=1)
+    numerical_gradient = compute_numerical_gradient(costFunction, theta)
+    back_prop_gradient = ml.neural_network_cost_gradient_unrolled(theta, X, Y, shapes, regularization_lambda=1)[1].reshape((-1, 1))
     print(np.hstack((back_prop_gradient, numerical_gradient)))
 
 
@@ -38,12 +39,13 @@ def compute_numerical_gradient(costFunction, theta_vec, epsilon=0.0001):
     perturbation = np.zeros(theta_vec.shape)
     for i in range(len(theta_vec)):
         perturbation[i, 0] = epsilon
-        loss1 = costFunction(theta_vec=theta_vec + perturbation)
-        loss2 = costFunction(theta_vec=theta_vec - perturbation)
+        loss1 = costFunction(theta=theta_vec + perturbation)
+        loss2 = costFunction(theta=theta_vec - perturbation)
         numerical_gradient[i, 0] = (loss1 - loss2) / (2 * epsilon)
         perturbation[i, 0] = 0
     return numerical_gradient
 
 
 if __name__ == '__main__':
+    logistic_regression_gradient_check()
     neural_network_gradient_check()

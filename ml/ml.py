@@ -87,9 +87,10 @@ def logistic_regression_cost_gradient(theta, x_m, y, regularization=0):
     :param y:
     :return: tuple with function results of logistic_regression_cost and logistic_regression_cost_derivative
     """
-    theta = theta.reshape((len(theta), 1))
-    return logistic_regression_cost(x_m, y, theta, regularization), logistic_regression_cost_derivative(x_m, y, theta,
-                                                                                                        regularization)
+    theta = theta.reshape((-1, 1))
+    cost = logistic_regression_cost(x_m, y, theta, regularization)
+    gradient = logistic_regression_cost_derivative(x_m, y, theta, regularization).reshape((-1))
+    return cost, gradient
 
 
 def gradient_descent(x_m, y, cost_func, cost_func_derivative, alpha=0.01, num_iter=1000, regularization=0):
@@ -145,8 +146,8 @@ def neural_network_cost(X, Y, Thetas, regularization_lambda=0):
     return total_cost / m + regularization_lambda / (2 * m) * regularization
 
 
-def neural_network_cost_unrolled(X, Y, theta_vec, shapes, regularization_lambda=0):
-    Thetas = roll(theta_vec, shapes)
+def neural_network_cost_unrolled(X, Y, theta, shapes, regularization_lambda=0):
+    Thetas = roll(theta, shapes)
     return neural_network_cost(X, Y, Thetas, regularization_lambda)
 
 
@@ -179,6 +180,8 @@ def neural_network_cost_gradient(X, Y, Thetas, regularization_lambda=0):
             if layer_idx > 0:
                 delta_last_layer = (Thetas[layer_idx].T @ delta_last_layer)[1:, :] * sigmoid_gradient(list_z.pop())
 
+    Deltas = [Delta / m for Delta in Deltas]
+
     cost /= m
     if regularization_lambda:
         regularization_sum = 0
@@ -187,7 +190,19 @@ def neural_network_cost_gradient(X, Y, Thetas, regularization_lambda=0):
             regularization_sum += (Theta_without_bias ** 2).sum((0, 1))
         cost += regularization_lambda / (2 * m) * regularization_sum
 
-    return cost, [Delta / m for Delta in Deltas]
+        for idx in range(len(Thetas)):
+            Theta_without_bias = Thetas[idx][:, 1:]
+            Deltas[idx][:, 1:] += Theta_without_bias * (regularization_lambda / m)
+
+    return cost, Deltas
+
+
+def neural_network_cost_gradient_unrolled(theta, X, Y, shapes, regularization_lambda=0):
+    Thetas = roll(theta, shapes)
+
+    (cost, Deltas) = neural_network_cost_gradient(X, Y, Thetas, regularization_lambda)
+
+    return cost, flatten_and_stack(Deltas)[0].reshape((-1))
 
 
 def flatten_and_stack(Matrices):
@@ -195,16 +210,17 @@ def flatten_and_stack(Matrices):
     shapes = []
     for M in Matrices:
         shapes.append(M.shape)
-        stack = np.vstack((stack, M.reshape((-1, 1), order="F")))
+        stack = np.vstack((stack, M.reshape((-1, 1))))
     return stack, shapes
 
 
 def roll(vector, shapes):
+    vector = vector.reshape((-1, 1))
     Matrices = []
     from_idx = 0
     for shape in shapes:
         to_idx = from_idx + shape[0] * shape[1]
-        Matrices.append(vector[from_idx:to_idx, :].reshape(shape, order="F"))
+        Matrices.append(vector[from_idx:to_idx, :].reshape(shape))
         from_idx = to_idx
     return Matrices
 

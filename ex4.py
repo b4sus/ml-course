@@ -1,7 +1,7 @@
 import scipy.io as sio
-import ml.predict as predict
 import ml.ml as ml
 import numpy as np
+import scipy.optimize as op
 
 images_mat = sio.loadmat("ml_course_solutions/machine-learning-ex4/ex4/ex4data1.mat")
 
@@ -26,8 +26,6 @@ print(theta_1.shape)
 print(ml.neural_network_cost(X, Y, [theta_0, theta_1], 1))
 print(ml.neural_network_cost_gradient(X, Y, [theta_0, theta_1], 1)[0])
 
-print(ml.initialize_random_theta((2, 3)))
-
 Output = ml.feed_forward(X, [theta_0, theta_1])
 
 predictions = np.argmax(Output, axis=1).reshape((X.shape[0], 1))
@@ -39,4 +37,23 @@ print(np.mean(predictions == y))
 theta_0 = ml.initialize_random_theta((25, 400))
 theta_1 = ml.initialize_random_theta((10, 25))
 
-Deltas = ml.neural_network_cost_gradient(X, Y, [theta_0, theta_1], 1)[1]
+(theta_vec, shapes) = ml.flatten_and_stack([theta_0, theta_1])
+
+result = op.minimize(fun=ml.neural_network_cost_gradient_unrolled,
+                     x0=theta_vec.reshape((-1)),
+                     args=(X, Y, shapes, 1),
+                     method="CG",
+                     jac=True,
+                     options={"maxiter": 100, "disp": True})
+
+print(result)
+
+Thetas = ml.roll(result.x, shapes)
+
+Output = ml.feed_forward(X, Thetas)
+
+predictions = np.argmax(Output, axis=1).reshape((X.shape[0], 1))
+
+predictions = predictions + 1
+
+print(np.mean(predictions == y))

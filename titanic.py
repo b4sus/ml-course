@@ -34,6 +34,7 @@ class Passenger:
     def __str__(self):
         return f'{self.id} - {self.name} - {self.survived}'
 
+
 class TrainPassenger(Passenger):
     def __init__(self, param_dict):
         super().__init__(param_dict)
@@ -42,6 +43,7 @@ class TrainPassenger(Passenger):
     def __str__(self):
         return f"{self.id} - {self.name}"
 
+
 passengers = []
 
 with open('data/titanic-train.csv', 'r') as train_csv:
@@ -49,19 +51,20 @@ with open('data/titanic-train.csv', 'r') as train_csv:
     for row in dict_reader:
         passengers.append(TrainPassenger(row))
 
-random.shuffle(passengers)
+# random.shuffle(passengers)
+
+# passengers = [p for p in passengers if p.fare < 500]  # really huge (well above average)
+# entries can cause division by 0 when they are multiplied by polynomial features
 
 train_passengers = passengers[:int(len(passengers) * 0.9)]
 validation_passengers = passengers[int(len(passengers) * 0.9):]
 
-# passengers = [p for p in passengers if p.fare < 500] really huge (well above average)
-# entries can cause division by 0 when they are multiplied by polynomial features
-
 
 def create_feature_matrix(passengers):
-    X = np.empty((0, 4))
+    X = np.empty((0, 6))
     for (idx, passenger) in enumerate(passengers):
-        X = np.vstack((X, [passenger.sex, passenger.age, passenger.ticket_class, passenger.fare]))
+        X = np.vstack((X, [passenger.sex, passenger.age, passenger.ticket_class, passenger.fare,
+                           passenger.num_siblings_spouses, passenger.num_parents_children]))
     return X
 
 
@@ -77,7 +80,7 @@ y = create_result_vector(train_passengers)
 
 pipeline = pipeline.Pipeline()
 pipeline.one_hot_encode(2)
-pipeline.polynomial(2, include_bias=False, interaction_only=True)
+pipeline.polynomial(3, include_bias=False, interaction_only=True)
 pipeline.reduce_features_without_std()
 pipeline.normalize()
 pipeline.bias()
@@ -97,7 +100,6 @@ predictions_validation = predict.predict(X_validation[:, 1:], theta_from_pipelin
 
 print(np.mean(predictions_validation == y_validation))
 
-
 test_passengers = []
 
 with open('data/titanic-test.csv', 'r') as test_csv:
@@ -111,7 +113,7 @@ X_test = pipeline.process_test(X_test)
 
 predictions_test = predict.predict(X_test[:, 1:], theta_from_pipeline, ml.logistic_regression_hypothesis)
 
-print(predictions_test)
+# print(predictions_test)
 
 results = zip([p.id for p in test_passengers], predictions_test.flatten())
 
