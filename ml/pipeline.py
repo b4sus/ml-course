@@ -72,15 +72,15 @@ class Pipeline:
     def bias(self):
         self.steps.append(BiasStep())
 
-    def execute_train(self, X, y, /, *, regularization=0):
-        print("Vanilla X({} {}):\n{}".format(*X.shape, X))
+    def execute_train(self, X, y, /, *, regularization_lambda=0):
+        # print("Vanilla X({} {}):\n{}".format(*X.shape, X))
         for step in self.steps:
             X = step.apply(X)
-            print("After {} X({} {}):\n{}".format(step, *X.shape, X))
+            # print("After {} X({} {}):\n{}".format(step, *X.shape, X))
 
         result = op.minimize(fun=ml.logistic_regression_cost_gradient,
                              x0=np.zeros((X.shape[1], 1)),
-                             args=(X, y, regularization),
+                             args=(X, y, regularization_lambda),
                              method="CG",
                              jac=True,
                              options={"maxiter": 400, "disp": True})

@@ -4,7 +4,7 @@ import numpy as np
 import ml.ml as ml
 import ml.predict as predict
 import ml.feature as feature
-import ml.pipeline as pipeline
+import ml.pipeline as pline
 import scipy.optimize as op
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.preprocessing import Normalizer
@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 np.seterr(all="raise")
 
+embarked_mapping = {"C": 1, "Q": 2, "S": 3, }
 
 class Passenger:
     def __init__(self, param_dict):
@@ -29,7 +30,9 @@ class Passenger:
         self.ticket_nr = param_dict['Ticket']
         self.fare = float(param_dict['Fare']) if param_dict['Fare'] else 15.
         self.cabin = param_dict['Cabin']
-        self.embarked = param_dict['Embarked']
+        embarked = param_dict['Embarked']
+        if embarked:
+            self.embarked = embarked_mapping[embarked]
 
     def __str__(self):
         return f'{self.id} - {self.name} - {self.survived}'
@@ -51,20 +54,22 @@ with open('data/titanic-train.csv', 'r') as train_csv:
     for row in dict_reader:
         passengers.append(TrainPassenger(row))
 
+# random.seed(10)
 # random.shuffle(passengers)
 
 # passengers = [p for p in passengers if p.fare < 500]  # really huge (well above average)
 # entries can cause division by 0 when they are multiplied by polynomial features
 
-train_passengers = passengers[:int(len(passengers) * 0.9)]
-validation_passengers = passengers[int(len(passengers) * 0.9):]
+train_passengers = passengers[:int(len(passengers) * 0.6)]
+cv_passengers = passengers[int(len(passengers) * 0.6):int(len(passengers) * 0.8)]
+test_passengers = passengers[int(len(passengers) * 0.8):]
 
 
 def create_feature_matrix(passengers):
-    X = np.empty((0, 6))
+    X = np.empty((0, 7))
     for (idx, passenger) in enumerate(passengers):
         X = np.vstack((X, [passenger.sex, passenger.age, passenger.ticket_class, passenger.fare,
-                           passenger.num_siblings_spouses, passenger.num_parents_children]))
+                           passenger.num_siblings_spouses, passenger.num_parents_children, passenger.embarked]))
     return X
 
 
@@ -76,29 +81,71 @@ def create_result_vector(passengers):
 
 
 X_train = create_feature_matrix(train_passengers)
-y = create_result_vector(train_passengers)
+y_train = create_result_vector(train_passengers)
 
-pipeline = pipeline.Pipeline()
-pipeline.one_hot_encode(2)
-pipeline.polynomial(3, include_bias=False, interaction_only=True)
+X_cv = create_feature_matrix(cv_passengers)
+y_cv = create_result_vector(cv_passengers)
+
+pipeline = pline.Pipeline()
+pipeline.one_hot_encode((2, 6))
+pipeline.polynomial(2, include_bias=False, interaction_only=True)
 pipeline.reduce_features_without_std()
 pipeline.normalize()
 pipeline.bias()
 
-(theta_from_pipeline, X_processed) = pipeline.execute_train(X_train, y, regularization=1)
+lambdas = [0, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 8, 10.24, 13, 16, 18, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
-predictions = predict.predict(X_processed[:, 1:], theta_from_pipeline, ml.logistic_regression_hypothesis)
+j_train = []
+j_cv = []
 
-print(np.mean(predictions == y))
+for regularization_lambda in lambdas:
+    (theta, X_processed) = pipeline.execute_train(X_train, y_train, regularization_lambda=regularization_lambda)
 
-X_validation = create_feature_matrix(validation_passengers)
-y_validation = create_result_vector(validation_passengers)
+    j_train.append(ml.logistic_regression_cost(X_processed, y_train, theta))
+    j_cv.append(ml.logistic_regression_cost(pipeline.process_test(X_cv), y_cv, theta))
 
-X_validation = pipeline.process_test(X_validation)
+plt.figure(1)
+plt.plot(lambdas, j_train, label="j_train")
+plt.plot(lambdas, j_cv, label="j_cv")
+plt.xlabel("lambda")
+plt.legend()
+plt.show(block=False)
 
-predictions_validation = predict.predict(X_validation[:, 1:], theta_from_pipeline, ml.logistic_regression_hypothesis)
+j_train = []
+j_cv = []
+polynomial_degrees = list(range(1, 10))
+for polynomial_degree in polynomial_degrees:
+    pipeline_pd = pline.Pipeline()
+    pipeline_pd.one_hot_encode(2, 6)
+    pipeline_pd.polynomial(polynomial_degree, include_bias=False, interaction_only=True)
+    pipeline_pd.reduce_features_without_std()
+    pipeline_pd.normalize()
+    pipeline_pd.bias()
+    (theta, X_processed) = pipeline_pd.execute_train(X_train, y_train, regularization_lambda=9)
 
-print(np.mean(predictions_validation == y_validation))
+    j_train.append(ml.logistic_regression_cost(X_processed, y_train, theta))
+    j_cv.append(ml.logistic_regression_cost(pipeline_pd.process_test(X_cv), y_cv, theta))
+
+plt.figure(2)
+plt.plot(polynomial_degrees, j_train, label="j_train")
+plt.plot(polynomial_degrees, j_cv, label="j_cv")
+plt.xlabel("polynomial degree")
+plt.legend()
+plt.show()
+
+(theta, X_processed) = pipeline.execute_train(X_train, y_train, regularization_lambda=15)
+
+j_train = ml.logistic_regression_cost(X_processed, y_train, theta)
+
+print(f"j_train: {j_train}")
+
+predictions = predict.predict(X_processed[:, 1:], theta, ml.logistic_regression_hypothesis)
+
+print(np.mean(predictions == y_train))
+
+predictions_validation = predict.predict(pipeline.process_test(X_cv)[:, 1:], theta, ml.logistic_regression_hypothesis)
+
+print(np.mean(predictions_validation == y_cv))
 
 test_passengers = []
 
@@ -111,7 +158,7 @@ X_test = create_feature_matrix(test_passengers)
 
 X_test = pipeline.process_test(X_test)
 
-predictions_test = predict.predict(X_test[:, 1:], theta_from_pipeline, ml.logistic_regression_hypothesis)
+predictions_test = predict.predict(X_test[:, 1:], theta, ml.logistic_regression_hypothesis)
 
 # print(predictions_test)
 

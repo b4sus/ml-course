@@ -54,7 +54,7 @@ def reduce_features_without_std(X):
     return X[:, non_zero_indices].reshape((m, -1)), non_zero_indices
 
 
-def one_hot_encode(X, *feature_indices):
+def one_hot_encode(X, feature_indices):
     def one_hot_encode(X, feature_idx):
         distinct_values = set(X[:, feature_idx])
 
@@ -71,7 +71,8 @@ def one_hot_encode(X, *feature_indices):
 
         return np.hstack((X[:, :feature_idx], X_new_features, X[:, feature_idx + 1:])), len(distinct_values)
 
-    feature_indices = np.sort(feature_indices)
+    feature_indices = list(feature_indices)
+    feature_indices.sort()
 
     X_new = X
 
