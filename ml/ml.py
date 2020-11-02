@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def linear_regression_cost(x_m, y, theta):
+def linear_regression_cost(x_m, y, theta, regularization_lambda=0):
     """
     :param x_m: matrix of size m x n
     :param y: vector of length m (m x 1)
@@ -14,16 +14,28 @@ def linear_regression_cost(x_m, y, theta):
 
     h_x = x_m @ theta  # h_x -> m x 1
     h_x_minus_y = h_x - y
-    return (h_x_minus_y.T @ h_x_minus_y) / (2 * m)
+    cost = (h_x_minus_y.T @ h_x_minus_y) / (2 * m)
+
+    if regularization_lambda:
+        cost += (regularization_lambda / (2 * m)) * (theta[1:, :] ** 2).sum()
+
+    return cost;
 
 
-def linear_regression_cost_derivative(x_m, y, theta):
+def linear_regression_cost_derivative(x_m, y, theta, regularization_lambda=0):
     (m, n) = x_m.shape
 
     assert theta.shape == (n, 1)
 
     h_x = x_m @ theta
-    return ((h_x - y).T @ x_m).T / m
+    gradient = ((h_x - y).T @ x_m).T / m
+
+    if regularization_lambda:
+        regularization = (regularization_lambda / m) * theta[1:, :]
+        assert regularization.shape == (n - 1, 1)
+        gradient[1:, :] += regularization
+
+    return gradient
 
 
 def logistic_regression_hypothesis(x_m, theta):
