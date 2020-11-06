@@ -19,7 +19,7 @@ def linear_regression_cost(x_m, y, theta, regularization_lambda=0):
     if regularization_lambda:
         cost += (regularization_lambda / (2 * m)) * (theta[1:, :] ** 2).sum()
 
-    return cost;
+    return cost
 
 
 def linear_regression_cost_derivative(x_m, y, theta, regularization_lambda=0):
@@ -36,6 +36,13 @@ def linear_regression_cost_derivative(x_m, y, theta, regularization_lambda=0):
         gradient[1:, :] += regularization
 
     return gradient
+
+
+def linear_regression_cost_gradient(theta, X, y, regularization_lambda=0):
+    theta = theta.reshape((-1, 1))
+    cost = linear_regression_cost(X, y, theta, regularization_lambda)
+    gradient = linear_regression_cost_derivative(X, y, theta, regularization_lambda)
+    return cost, gradient.reshape((-1))
 
 
 def logistic_regression_hypothesis(x_m, theta):
