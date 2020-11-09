@@ -1,4 +1,6 @@
+import ml.feature as feature
 import numpy as np
+from sklearn.preprocessing import PolynomialFeatures
 
 
 def learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun):
@@ -20,5 +22,28 @@ def learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv,
     return j_train, j_cv
 
 
-def learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun):
-    pass
+def learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun,
+                                                   max_polynomial_degree):
+    j_train = []
+    j_cv = []
+
+    for polynomial_degree in range(1, max_polynomial_degree):
+        poly_features = PolynomialFeatures(polynomial_degree, include_bias=False)
+        X_train_poly = poly_features.fit_transform(X_train)
+
+        normalizer = feature.FeatureNormalizer(X_train_poly)
+        X_train_poly = normalizer.normalize_matrix(X_train_poly)
+
+        X_train_poly = np.hstack((np.ones((X_train_poly.shape[0], 1)), X_train_poly))
+
+        theta = minimize_fun(X_train_poly, y_train)
+
+        j_train.append(cost_fun(X_train_poly, y_train, theta))
+
+        X_cv_poly = poly_features.fit_transform(X_cv)
+        X_cv_poly = normalizer.normalize_matrix(X_cv_poly)
+        X_cv_poly = np.hstack((np.ones((X_cv_poly.shape[0], 1)), X_cv_poly))
+
+        j_cv.append(cost_fun(X_cv_poly, y_cv, theta))
+
+    return j_train, j_cv
