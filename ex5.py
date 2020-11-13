@@ -74,6 +74,10 @@ def cost(X, y, theta):
     return ml.linear_regression_cost(X, y, theta)[0][0]
 
 
+def with_bias(X):
+    return np.hstack((np.ones((X.shape[0], 1)), X))
+
+
 (j_train, j_cv) = lc.learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv, minimize, cost)
 
 plt.figure(1)
@@ -99,6 +103,8 @@ normalizer = feature.FeatureNormalizer(X_train_poly)
 X_train_poly = normalizer.normalize_matrix(X_train_poly)
 X_cv_poly = poly_features.fit_transform(X_cv)
 X_cv_poly = normalizer.normalize_matrix(X_cv_poly)
+X_test_poly = poly_features.fit_transform(X_test)
+X_test_poly = normalizer.normalize_matrix(X_test_poly)
 
 regularization_lambda = 1
 
@@ -141,4 +147,16 @@ plt.plot(regularization_lambdas, j_train, label="j_train")
 plt.plot(regularization_lambdas, j_cv, label="j_cv")
 plt.xlabel("lambda")
 plt.ylabel("error")
+plt.show()
+
+theta = minimize(with_bias(X_train_poly), y_train, 3)
+
+print(f"cv error: {cost(with_bias(X_cv_poly), y_cv, theta)}")
+print(f"test error: {cost(with_bias(X_test_poly), y_test, theta)}")
+
+(j_train_means, j_cv_means) = lc.learning_curves_on_random_sets(X_train_poly, y_train, X_cv_poly, y_cv, minimize, cost,
+                                                                0.01)
+plt.figure(6)
+plt.plot(list(j_train_means.keys()), list(j_train_means.values()), label="j_train_means")
+plt.plot(list(j_cv_means.keys()), list(j_cv_means.values()), label="j_cv_means")
 plt.show()

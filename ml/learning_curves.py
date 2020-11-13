@@ -103,3 +103,43 @@ def learning_curves_of_different_lambda(X_train, y_train, X_cv, y_cv, minimize_f
         j_cv.append(cost_fun(X_cv, y_cv, theta))
 
     return j_train, j_cv, regularization_lambdas
+
+
+def learning_curves_on_random_sets(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun, regularization_lambda=0):
+
+    X_train = np.hstack((np.ones((X_train.shape[0], 1)), X_train))
+    X_cv = np.hstack((np.ones((X_cv.shape[0], 1)), X_cv))
+
+    rng = np.random.default_rng()
+
+    j_train = {}
+    j_cv = {}
+    for i in range(100):
+        size = rng.integers(1, X_train.shape[0] + 1)
+        indices = rng.choice(list(range(X_train.shape[0])), size, False)
+        X_train_sub = X_train[indices, :]
+        y_train_sub = y_train[indices, :]
+        theta = minimize_fun(X_train_sub, y_train_sub, regularization_lambda)
+
+        j_train_for_size = j_train.get(size, np.array([]))
+        j_train_for_size = np.append(j_train_for_size, cost_fun(X_train_sub, y_train_sub, theta))
+        j_train[size] = j_train_for_size
+
+        X_cv_sub = X_cv[indices, :]
+        y_cv_sub = y_cv[indices, :]
+        j_cv_for_size = j_cv.get(size, np.array([]))
+        j_cv_for_size = np.append(j_cv_for_size, cost_fun(X_cv_sub, y_cv_sub, theta))
+        j_cv[size] = j_cv_for_size
+
+    j_train_means = {size: costs.mean() for size, costs in j_train.items()}
+    j_cv_means = {size: costs.mean() for size, costs in j_cv.items()}
+
+    j_train_means_sorted_by_size = {}
+    for size in sorted(j_train_means):
+        j_train_means_sorted_by_size[size] = j_train_means[size]
+
+    j_cv_means_sorted_by_size = {}
+    for size in sorted(j_cv_means):
+        j_cv_means_sorted_by_size[size] = j_cv_means[size]
+
+    return j_train_means_sorted_by_size, j_cv_means_sorted_by_size
