@@ -1,9 +1,21 @@
-import ml.feature as feature
 import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 
+import ml.feature as feature
+
 
 def learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun):
+    """
+    Trains theta with X_train and y_train using minimize_fun with different training size (1 to full).
+    Calculates and return training set and cross-validation error.
+    :param X_train:
+    :param y_train:
+    :param X_cv:
+    :param y_cv:
+    :param minimize_fun: expected signature minimize_fun(X, y) -> theta
+    :param cost_fun: expected signature cost_fun(X, y, theta) -> float
+    :return: training errors, cross-validation errors
+    """
     j_train = []
     j_cv = []
 
@@ -24,6 +36,18 @@ def learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv,
 
 def learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun,
                                                    max_polynomial_degree):
+    """
+    Trains theta with X_train and y_train using minimize_fun with different polynomial degree
+    (1 to provided max_polynomial_degree). Calculates and return training set and cross-validation error.
+    :param X_train:
+    :param y_train:
+    :param X_cv:
+    :param y_cv:
+    :param minimize_fun: expected signature minimize_fun(X, y) -> theta
+    :param cost_fun: expected signature cost_fun(X, y, theta) -> float
+    :param max_polynomial_degree:
+    :return: training errors, cross-validation errors
+    """
     j_train = []
     j_cv = []
 
@@ -47,3 +71,35 @@ def learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv,
         j_cv.append(cost_fun(X_cv_poly, y_cv, theta))
 
     return j_train, j_cv
+
+
+def learning_curves_of_different_lambda(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun,
+                                        regularization_lambdas=None):
+    """
+    Trains theta with X_train and y_train using minimize_fun with different lambdas. Calculates and return training set
+    and cross-validation error.
+    :param X_train:
+    :param y_train:
+    :param X_cv:
+    :param y_cv:
+    :param minimize_fun: expected signature minimize_fun(X, y, regularization_lambda) -> theta
+    :param cost_fun: expected signature cost_fun(X, y, theta) -> float
+    :param regularization_lambdas: list of lambdas to try
+    :return: training errors, cross-validation errors
+    """
+    if regularization_lambdas is None:
+        regularization_lambdas = [0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10]
+
+    j_train = []
+    j_cv = []
+
+    X_train = np.hstack((np.ones((X_train.shape[0], 1)), X_train))
+    X_cv = np.hstack((np.ones((X_cv.shape[0], 1)), X_cv))
+
+    for regularization_lambda in regularization_lambdas:
+        theta = minimize_fun(X_train, y_train, regularization_lambda)
+
+        j_train.append(cost_fun(X_train, y_train, theta))
+        j_cv.append(cost_fun(X_cv, y_cv, theta))
+
+    return j_train, j_cv, regularization_lambdas

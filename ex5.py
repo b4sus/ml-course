@@ -105,7 +105,8 @@ regularization_lambda = 1
 result = op.minimize(fun=ml.linear_regression_cost_gradient,
                      x0=np.zeros(X_train_poly.shape[1] + 1),
                      args=(
-                     np.hstack((np.ones((X_train_poly.shape[0], 1)), X_train_poly)), y_train, regularization_lambda),
+                         np.hstack((np.ones((X_train_poly.shape[0], 1)), X_train_poly)), y_train,
+                         regularization_lambda),
                      method="CG",
                      jac=True,
                      options={"maxiter": 400})
@@ -129,5 +130,15 @@ plt.figure(4)
 plt.plot(list(range(1, len(j_train) + 1)), j_train, label="j_train")
 plt.plot(list(range(1, len(j_train) + 1)), j_cv, label="j_cv")
 plt.xlabel("training set size")
+plt.ylabel("error")
+plt.show()
+
+(j_train, j_cv, regularization_lambdas) = lc.learning_curves_of_different_lambda(X_train_poly, y_train, X_cv_poly, y_cv,
+                                                                                 minimize, cost)
+
+plt.figure(5)
+plt.plot(regularization_lambdas, j_train, label="j_train")
+plt.plot(regularization_lambdas, j_cv, label="j_cv")
+plt.xlabel("lambda")
 plt.ylabel("error")
 plt.show()
