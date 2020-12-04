@@ -103,12 +103,12 @@ for polynomial_degree in polynomial_degrees:
     j_train.append(ml.logistic_regression_cost(X_processed, y_train, theta))
     j_cv.append(ml.logistic_regression_cost(pipeline_pd.process_test(X_cv), y_cv, theta))
 
-plt.figure(2)
+plt.figure(0)
 plt.plot(polynomial_degrees, j_train, label="j_train")
 plt.plot(polynomial_degrees, j_cv, label="j_cv")
 plt.xlabel("polynomial degree")
 plt.legend()
-plt.show()
+plt.show(block=False)
 
 pipeline = pline.Pipeline()
 pipeline.one_hot_encode([2])
@@ -135,7 +135,7 @@ plt.plot(lambdas, j_train, label="j_train")
 plt.plot(lambdas, j_cv, label="j_cv")
 plt.xlabel("lambda")
 plt.legend()
-plt.show(block=False)
+plt.show()
 
 (theta, X_processed) = pipeline.execute_train(X_train, y_train, regularization_lambda=1)
 
@@ -151,7 +151,12 @@ predictions_validation = predict.predict(pipeline.process_test(X_cv)[:, 1:], the
 
 print(f"cv accuracy: {np.mean(predictions_validation == y_cv)}")
 
-test_passengers = []
+X_test = create_feature_matrix(test_passengers)
+y_test = create_result_vector(test_passengers)
+
+predictions_test = predict.predict(pipeline.process_test(X_test)[:, 1:], theta, ml.logistic_regression_hypothesis)
+
+print(f"test accuracy: {np.mean(predictions_test == y_test)}")
 
 with open('data/titanic-test.csv', 'r') as test_csv:
     dict_reader = csv.DictReader(test_csv)
