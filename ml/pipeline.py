@@ -14,11 +14,11 @@ class Step:
 
 
 class OneHotEncodeStep(Step):
-    def __init__(self, indices):
-        self.indices = indices
+    def __init__(self, feature_indices):
+        self.feature_indices = feature_indices
 
     def apply(self, X):
-        return feature.one_hot_encode(X, self.indices)
+        return feature.one_hot_encode(X, self.feature_indices)
 
 
 class NormalizeStep(Step):
@@ -57,8 +57,8 @@ class Pipeline:
     def __init__(self):
         self.steps = []
 
-    def one_hot_encode(self, indices):
-        self.steps.append(OneHotEncodeStep(indices))
+    def one_hot_encode(self, feature_indices):
+        self.steps.append(OneHotEncodeStep(feature_indices))
 
     def normalize(self):
         self.steps.append(NormalizeStep())

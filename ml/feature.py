@@ -71,7 +71,6 @@ def one_hot_encode(X, feature_indices):
 
         return np.hstack((X[:, :feature_idx], X_new_features, X[:, feature_idx + 1:])), len(distinct_values)
 
-    feature_indices = list(feature_indices)
     feature_indices.sort()
 
     X_new = X
