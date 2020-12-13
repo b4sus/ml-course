@@ -32,7 +32,7 @@ class FeatureNormalizer(object):
             stds[feature_idx] = feature.std()
             if stds[feature_idx] == 0:
                 raise Exception("Feature {} has 0 standard deviation".format(feature_idx))
-            normalized_feature = ((feature - means[feature_idx]) / stds[feature_idx]).T.reshape((m, 1))
+            normalized_feature = ((feature - means[feature_idx]) / stds[feature_idx]).reshape((m, 1))
             normalized_x_m = np.hstack((normalized_x_m, normalized_feature))
         return normalized_x_m, means, stds
 
