@@ -33,7 +33,7 @@ def plot_k_means(previous_centroids, centroids):
 def k_means_picture():
     bird_image = image.imread("ml_course_solutions/machine-learning-ex7/ex7/bird_small.png")
     plt.imshow(bird_image)
-    plt.show()
+    plt.show(block=False)
 
     im_shape = bird_image.shape
 
