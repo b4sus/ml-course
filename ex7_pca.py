@@ -1,6 +1,7 @@
 import scipy.io as sio
 import matplotlib.pyplot as plt
 from matplotlib import image
+import numpy as np
 
 import ml.feature as feature
 import ml.pca as pca
@@ -87,10 +88,42 @@ def pca_on_bird():
 
     X = bird_image.reshape([im_shape[0] * im_shape[1], 3])
 
-    centroids = k_means.k_means(X, k_means.init_random_centroids(X, 16))
+    k = 16
 
-    closest_centroids = k_means.find_closest_centroids(X, centroids)
+    (centroids, closest_centroids) = k_means.k_means(X, k_means.init_random_centroids(X, k))
 
+    nr_samples = 1000
+    rng = np.random.default_rng()
+    random_indices = rng.integers(0, X.shape[0], nr_samples)
+
+    colors = []
+    X_rand = np.empty((nr_samples, X.shape[1]))
+    for i in range(nr_samples):
+        colors.append(closest_centroids[random_indices[i]])
+        X_rand[i, :] = X[random_indices[i], :]
+
+    plt.hsv()
+    fig = plt.figure(3)
+    ax = fig.gca(projection='3d')
+    ax.scatter(X_rand[:, 0], X_rand[:, 1], X_rand[:, 2], c=colors)
+    plt.show(block=False)
+
+    X_norm = feature.FeatureNormalizer(X).normalized_x_m
+    while True:
+        try:
+            (U, S) = pca.pca(X_norm)
+            break
+        except:
+            pass
+
+    Z = pca.project(X, U, 2)
+    Z_rand = np.empty((nr_samples, Z.shape[1]))
+    for i in range(nr_samples):
+        Z_rand[i, :] = Z[random_indices[i], :]
+
+    plt.figure(4)
+    plt.scatter(Z_rand[:, 0], Z_rand[:, 1], c=colors)
+    plt.show()
 
 if __name__ == "__main__":
     # pca_warmup()

@@ -15,9 +15,7 @@ def k_means_warm_up():
     print(k_means.compute_centroids(X, closest_centroids, 3))
 
     centroids = k_means.init_random_centroids(X, 3)
-    centroids = k_means.k_means(X, centroids, listener_fun=plot_k_means)
-
-    closest_centroids = k_means.find_closest_centroids(X, centroids)
+    (centroids, closest_centroids) = k_means.k_means(X, centroids, listener_fun=plot_k_means)
     plt.plot(X[closest_centroids == 0, 0], X[closest_centroids == 0, 1], "r+")
     plt.plot(X[closest_centroids == 1, 0], X[closest_centroids == 1, 1], "g+")
     plt.plot(X[closest_centroids == 2, 0], X[closest_centroids == 2, 1], "b+")
@@ -39,9 +37,7 @@ def k_means_picture():
 
     X = bird_image.reshape([im_shape[0] * im_shape[1], 3])
 
-    centroids = k_means.k_means(X, k_means.init_random_centroids(X, 16))
-
-    closest_centroids = k_means.find_closest_centroids(X, centroids)
+    (centroids, closest_centroids) = k_means.k_means(X, k_means.init_random_centroids(X, 16))
 
     X_compressed = np.empty(X.shape)
     for pixel_idx in range(X.shape[0]):

@@ -47,7 +47,7 @@ def k_means(X, centroids, iterations=10, listener_fun=None):
             listener_fun(previous_centroids, centroids)
         previous_centroids = centroids
 
-    return centroids
+    return centroids, closest_centroids
 
 
 def init_random_centroids(X, k):
