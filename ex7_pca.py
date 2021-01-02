@@ -9,7 +9,7 @@ import ml.k_means as k_means
 
 
 def pca_warmup():
-    data = sio.loadmat("ml_course_solutions/machine-learning-ex7/ex7/ex7data1.mat")
+    data = sio.loadmat("ml_course_material/machine-learning-ex7/ex7/ex7data1.mat")
     X = data["X"]
     # plt.plot(X[:, 0], X[:, 1], '.')
     # plt.show(block=False)
@@ -35,7 +35,7 @@ def pca_warmup():
 
 
 def pca_faces():
-    data = sio.loadmat("ml_course_solutions/machine-learning-ex7/ex7/ex7faces.mat")
+    data = sio.loadmat("ml_course_material/machine-learning-ex7/ex7/ex7faces.mat")
     X = data["X"]
 
     plt.figure(0)
@@ -80,7 +80,7 @@ def plot_images(X):
 
 
 def pca_on_bird():
-    bird_image = image.imread("ml_course_solutions/machine-learning-ex7/ex7/bird_small.png")
+    bird_image = image.imread("ml_course_material/machine-learning-ex7/ex7/bird_small.png")
     plt.imshow(bird_image)
     plt.show(block=False)
 

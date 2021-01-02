@@ -10,7 +10,7 @@ import ml.feature as feature
 import ml.learning_curves as lc
 import ml.ml as ml
 
-data = sio.loadmat("ml_course_solutions/machine-learning-ex5/ex5/ex5data1.mat")
+data = sio.loadmat("ml_course_material/machine-learning-ex5/ex5/ex5data1.mat")
 
 X_train = data["X"]
 y_train = data["y"]

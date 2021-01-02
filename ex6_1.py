@@ -16,7 +16,7 @@ def plot(figure, X, y):
 
 
 def dataset1():
-    data1 = sio.loadmat("ml_course_solutions/machine-learning-ex6/ex6/ex6data1.mat")
+    data1 = sio.loadmat("ml_course_material/machine-learning-ex6/ex6/ex6data1.mat")
 
     print(data1)
 
@@ -52,7 +52,7 @@ def gaussianKernelTest():
 
 
 def dataset2():
-    data2 = sio.loadmat("ml_course_solutions/machine-learning-ex6/ex6/ex6data2.mat")
+    data2 = sio.loadmat("ml_course_material/machine-learning-ex6/ex6/ex6data2.mat")
 
     X2 = data2["X"]
     y2 = data2["y"]
@@ -77,7 +77,7 @@ def dataset2():
 
 
 def dataset3():
-    data = sio.loadmat("ml_course_solutions/machine-learning-ex6/ex6/ex6data3.mat")
+    data = sio.loadmat("ml_course_material/machine-learning-ex6/ex6/ex6data3.mat")
     X = data["X"]
     y = data["y"]
     X_cv = data["Xval"]

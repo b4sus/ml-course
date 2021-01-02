@@ -7,7 +7,7 @@ import ml.k_means as k_means
 
 
 def k_means_warm_up():
-    data2 = sio.loadmat("ml_course_solutions/machine-learning-ex7/ex7/ex7data2.mat")
+    data2 = sio.loadmat("ml_course_material/machine-learning-ex7/ex7/ex7data2.mat")
     X = data2["X"]
     centroids = np.array([[3, 3], [6, 2], [8, 5]])
     closest_centroids = k_means.find_closest_centroids(X, centroids)
@@ -29,7 +29,7 @@ def plot_k_means(previous_centroids, centroids):
 
 
 def k_means_picture():
-    bird_image = image.imread("ml_course_solutions/machine-learning-ex7/ex7/bird_small.png")
+    bird_image = image.imread("ml_course_material/machine-learning-ex7/ex7/bird_small.png")
     plt.imshow(bird_image)
     plt.show(block=False)
 

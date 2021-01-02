@@ -5,7 +5,7 @@ import ml.pipeline as pipeline
 import ml.predict as predict
 import ml.ml as ml
 
-images_mat = sio.loadmat("ml_course_solutions/machine-learning-ex3/ex3/ex3data1.mat")
+images_mat = sio.loadmat("ml_course_material/machine-learning-ex3/ex3/ex3data1.mat")
 
 X = images_mat["X"]
 y = images_mat["y"]

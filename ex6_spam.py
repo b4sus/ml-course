@@ -50,7 +50,7 @@ def indices_into_features(vocabulary_values, word_indices):
 
 
 def classify_spam(vocabulary):
-    dataTrain = sio.loadmat("ml_course_solutions/machine-learning-ex6/ex6/spamTrain.mat")
+    dataTrain = sio.loadmat("ml_course_material/machine-learning-ex6/ex6/spamTrain.mat")
     X_train = dataTrain["X"]
     y_train = dataTrain["y"]
     svc = svm.SVC(C=0.1, kernel='linear')
@@ -59,7 +59,7 @@ def classify_spam(vocabulary):
     predictions_train = svc.predict(X_train)
     print(f"train prediction accuracy: {np.mean(predictions_train == y_train.flatten())}")
 
-    dataTest = sio.loadmat("ml_course_solutions/machine-learning-ex6/ex6/spamTest.mat")
+    dataTest = sio.loadmat("ml_course_material/machine-learning-ex6/ex6/spamTest.mat")
     X_test = dataTest["Xtest"]
     y_test = dataTest["ytest"]
 
@@ -80,8 +80,8 @@ def classify_spam(vocabulary):
 
 
 if __name__ == "__main__":
-    words = preprocess_email_from_file("ml_course_solutions/machine-learning-ex6/ex6/emailSample1.txt")
-    vocabulary = load_vocabulary("ml_course_solutions/machine-learning-ex6/ex6/vocab.txt")
+    words = preprocess_email_from_file("ml_course_material/machine-learning-ex6/ex6/emailSample1.txt")
+    vocabulary = load_vocabulary("ml_course_material/machine-learning-ex6/ex6/vocab.txt")
     indices = [vocabulary[word] for word in words if word in vocabulary]
     print(indices)
     features = indices_into_features(list(vocabulary.values()), indices)

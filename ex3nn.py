@@ -3,13 +3,13 @@ import ml.predict as predict
 import ml.ml as ml
 import numpy as np
 
-images_mat = sio.loadmat("ml_course_solutions/machine-learning-ex3/ex3/ex3data1.mat")
+images_mat = sio.loadmat("ml_course_material/machine-learning-ex3/ex3/ex3data1.mat")
 
 X = images_mat["X"]
 y = images_mat["y"]
 # y[y == 10] = 0
 
-weights_mat = sio.loadmat("ml_course_solutions/machine-learning-ex3/ex3/ex3weights.mat")
+weights_mat = sio.loadmat("ml_course_material/machine-learning-ex3/ex3/ex3weights.mat")
 
 theta_0 = weights_mat["Theta1"]
 theta_1 = weights_mat["Theta2"]

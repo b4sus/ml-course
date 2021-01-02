@@ -3,7 +3,7 @@ import ml.ml as ml
 import numpy as np
 import scipy.optimize as op
 
-images_mat = sio.loadmat("ml_course_solutions/machine-learning-ex4/ex4/ex4data1.mat")
+images_mat = sio.loadmat("ml_course_material/machine-learning-ex4/ex4/ex4data1.mat")
 
 X = images_mat["X"]
 y = images_mat["y"]
@@ -15,7 +15,7 @@ for i in range(len(y)):
     # Y[i, 0 if y[i] == 10 else y[i]] = 1
     Y[i, 9 if y[i] == 10 else y[i] - 1] = 1
 
-weights_mat = sio.loadmat("ml_course_solutions/machine-learning-ex4/ex4/ex4weights.mat")
+weights_mat = sio.loadmat("ml_course_material/machine-learning-ex4/ex4/ex4weights.mat")
 
 theta_0 = weights_mat["Theta1"]
 theta_1 = weights_mat["Theta2"]

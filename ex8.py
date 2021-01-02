@@ -65,7 +65,7 @@ def select_threshold(p_cv, y_cv):
 
 
 def server_anomaly_detection():
-    data = sio.loadmat("ml_course_solutions/machine-learning-ex8/ex8/ex8data1.mat")
+    data = sio.loadmat("ml_course_material/machine-learning-ex8/ex8/ex8data1.mat")
     X = data["X"]
     X_cv = data["Xval"]
     y_cv = data["yval"]
@@ -83,7 +83,7 @@ def server_anomaly_detection():
 
 
 def anomaly_detection_high_dimensional_dataset():
-    data = sio.loadmat("ml_course_solutions/machine-learning-ex8/ex8/ex8data2.mat")
+    data = sio.loadmat("ml_course_material/machine-learning-ex8/ex8/ex8data2.mat")
     X = data["X"]
     X_cv = data["Xval"]
     y_cv = data["yval"]
