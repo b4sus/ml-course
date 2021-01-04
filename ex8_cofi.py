@@ -15,6 +15,7 @@ def check_cost_function_with_preloaded_data(Y, R):
     R = R[:num_movies, :num_users]
 
     print(f"expected cost is 22.22, actual was {cofi.cost_function(X, Y, R, Theta)}")
+    cofi.cost_function_derivative(X, Y, R, Theta)
 
 
 if __name__ == "__main__":

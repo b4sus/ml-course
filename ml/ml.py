@@ -1,5 +1,7 @@
 import numpy as np
 
+import ml.utils as utils
+
 
 def linear_regression_cost(x_m, y, theta, regularization_lambda=0):
     """
@@ -166,7 +168,7 @@ def neural_network_cost(X, Y, Thetas, regularization_lambda=0):
 
 
 def neural_network_cost_unrolled(X, Y, theta, shapes, regularization_lambda=0):
-    Thetas = roll(theta, shapes)
+    Thetas = utils.roll(theta, shapes)
     return neural_network_cost(X, Y, Thetas, regularization_lambda)
 
 
@@ -217,31 +219,11 @@ def neural_network_cost_gradient(X, Y, Thetas, regularization_lambda=0):
 
 
 def neural_network_cost_gradient_unrolled(theta, X, Y, shapes, regularization_lambda=0):
-    Thetas = roll(theta, shapes)
+    Thetas = utils.roll(theta, shapes)
 
     (cost, Deltas) = neural_network_cost_gradient(X, Y, Thetas, regularization_lambda)
 
-    return cost, flatten_and_stack(Deltas)[0].reshape((-1))
-
-
-def flatten_and_stack(Matrices):
-    stack = np.empty((0, 1))
-    shapes = []
-    for M in Matrices:
-        shapes.append(M.shape)
-        stack = np.vstack((stack, M.reshape((-1, 1))))
-    return stack, shapes
-
-
-def roll(vector, shapes):
-    vector = vector.reshape((-1, 1))
-    Matrices = []
-    from_idx = 0
-    for shape in shapes:
-        to_idx = from_idx + shape[0] * shape[1]
-        Matrices.append(vector[from_idx:to_idx, :].reshape(shape))
-        from_idx = to_idx
-    return Matrices
+    return cost, utils.flatten_and_stack(Deltas)[0].reshape((-1))
 
 
 def initialize_random_theta(shape, epsilon_init=0.12):
