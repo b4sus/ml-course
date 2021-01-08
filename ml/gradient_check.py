@@ -1,7 +1,7 @@
 import numpy as np
 from functools import partial
 
-import ml.ml as ml
+import ml.neural_network as ml
 import ml.utils as utils
 import ml.collaborative_filtering as cofi
 

@@ -1,9 +1,9 @@
-import scipy.io as sio
 import numpy as np
-import matplotlib.pyplot as plt
+import scipy.io as sio
+
 import ml.pipeline as pipeline
 import ml.predict as predict
-import ml.ml as ml
+import ml.logistic_regression as lore
 
 images_mat = sio.loadmat("ml_course_material/machine-learning-ex3/ex3/ex3data1.mat")
 
@@ -21,8 +21,8 @@ thetas = pipeline.one_vs_all(X, y)
 hypotheses = np.zeros((5000, 10))
 
 for (digit, theta) in enumerate(thetas):
-    prediction = predict.predict(X, theta, ml.logistic_regression_hypothesis)
-    hypotheses[:, digit] = ml.logistic_regression_hypothesis(np.hstack((np.ones((5000, 1)), X)), theta)[:, 0]
+    prediction = predict.predict(X, theta, lore.logistic_regression_hypothesis)
+    hypotheses[:, digit] = lore.logistic_regression_hypothesis(np.hstack((np.ones((5000, 1)), X)), theta)[:, 0]
 
 predictions = np.argmax(hypotheses, axis=1).reshape((5000, 1))
 

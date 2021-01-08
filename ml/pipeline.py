@@ -1,5 +1,5 @@
 import ml.feature as feature
-import ml.ml as ml
+import ml.logistic_regression as lori
 import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 import scipy.optimize as op
@@ -78,7 +78,7 @@ class Pipeline:
             X = step.apply(X)
             # print("After {} X({} {}):\n{}".format(step, *X.shape, X))
 
-        result = op.minimize(fun=ml.logistic_regression_cost_gradient,
+        result = op.minimize(fun=lori.logistic_regression_cost_gradient,
                              x0=np.zeros((X.shape[1], 1)),
                              args=(X, y, regularization_lambda),
                              method="CG",

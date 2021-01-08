@@ -1,6 +1,8 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import ml.ml as ml
+import numpy as np
+
+import ml.linear_regression as lire
+from ml.gradient_descent import gradient_descent
 import ml.feature as ft
 
 data = np.loadtxt("data/ex1data2.txt", delimiter=",")
@@ -14,7 +16,7 @@ normalizer = ft.FeatureNormalizer(x)
 
 normalized_x_m = np.hstack((np.ones((m, 1)), normalizer.normalized_x_m))
 
-(theta, costs) = ml.gradient_descent(normalized_x_m, y, ml.linear_regression_cost, ml.linear_regression_cost_derivative)
+(theta, costs) = gradient_descent(normalized_x_m, y, lire.linear_regression_cost, lire.linear_regression_cost_derivative)
 
 plt.plot(costs)
 plt.show()

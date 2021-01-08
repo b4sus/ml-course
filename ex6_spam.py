@@ -1,8 +1,8 @@
 import re
 
+from nltk.stem import PorterStemmer
 import numpy as np
 import scipy.io as sio
-from nltk.stem import PorterStemmer
 from sklearn import svm
 
 

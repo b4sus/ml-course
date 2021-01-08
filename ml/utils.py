@@ -1,6 +1,10 @@
 import numpy as np
 
 
+def sigmoid(z):
+    return 1 / (1 + (np.e ** -z))
+
+
 def flatten_and_stack(Matrices):
     stack = np.empty((0, 1))
     shapes = []

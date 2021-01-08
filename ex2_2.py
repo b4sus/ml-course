@@ -1,9 +1,10 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import ml.ml as ml
-import ml.predict as predict
-from sklearn.preprocessing import PolynomialFeatures
+import numpy as np
 import scipy.optimize as op
+from sklearn.preprocessing import PolynomialFeatures
+
+import ml.logistic_regression as lore
+import ml.predict as predict
 
 data = np.loadtxt("data/ex2data2.txt", delimiter=",")
 
@@ -25,12 +26,12 @@ X_P = polynomial_features.transform(X)
 # (theta, costs) = ml.gradient_descent(X_P, y, ml.logistic_regression_cost, ml.logistic_regression_cost_derivative, num_iter=100000,
 #                                      regularization=0)
 
-(theta, num_of_evaluations, return_code) = op.fmin_tnc(func=ml.logistic_regression_cost_gradient,
+(theta, num_of_evaluations, return_code) = op.fmin_tnc(func=lore.logistic_regression_cost_gradient,
                                                        x0=np.zeros((X_P.shape[1], 1)),
                                                        args=(X_P, y, 0))
 theta = theta.reshape((X_P.shape[1], 1))
 
-predictions = predict.predict(X_P[:, 1:], theta, ml.logistic_regression_hypothesis)
+predictions = predict.predict(X_P[:, 1:], theta, lore.logistic_regression_hypothesis)
 
 print(np.mean(predictions == y))
 
@@ -52,7 +53,7 @@ for i in range(len(space_x)):
         x = np.array([[space_x[i], space_y[j]]])
         x_p = polynomial_features.fit_transform(x)
         # Z[i, j] = x_p@theta
-        Z[i, j] = predict.predict(x_p[:, 1:], theta, ml.logistic_regression_hypothesis)
+        Z[i, j] = predict.predict(x_p[:, 1:], theta, lore.logistic_regression_hypothesis)
 
 plt.subplot(121)
 plt.contour(space_x, space_y, Z.T, linewidths=0.5)

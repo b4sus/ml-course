@@ -1,6 +1,6 @@
-import scipy.io as sio
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.io as sio
 from sklearn import svm
 
 import ml.kernel as kernel

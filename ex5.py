@@ -8,7 +8,7 @@ from sklearn.preprocessing import PolynomialFeatures
 
 import ml.feature as feature
 import ml.learning_curves as lc
-import ml.ml as ml
+import ml.linear_regression as lire
 
 data = sio.loadmat("ml_course_material/machine-learning-ex5/ex5/ex5data1.mat")
 
@@ -26,11 +26,11 @@ y_test = data["ytest"]
 # plt.ylabel("Water flowing out of the dam")
 # plt.show()
 
-cost = ml.linear_regression_cost(np.hstack((np.ones((len(X_train), 1)), X_train)), y_train, np.array([[1], [1]]), 1)
+cost = lire.linear_regression_cost(np.hstack((np.ones((len(X_train), 1)), X_train)), y_train, np.array([[1], [1]]), 1)
 
 print(f"cost={cost}")
 
-gradient = ml.linear_regression_cost_derivative(np.hstack((np.ones((len(X_train), 1)), X_train)), y_train,
+gradient = lire.linear_regression_cost_derivative(np.hstack((np.ones((len(X_train), 1)), X_train)), y_train,
                                                 np.array([[1], [1]]), 1)
 
 print(gradient)
@@ -39,7 +39,7 @@ initial_theta = np.zeros((X_train.shape[1] + 1, 1))
 
 X_train_with_bias = np.hstack((np.ones((len(X_train), 1)), X_train))
 
-result = op.minimize(fun=ml.linear_regression_cost_gradient,
+result = op.minimize(fun=lire.linear_regression_cost_gradient,
                      x0=initial_theta.reshape((-1)),
                      args=(X_train_with_bias, y_train),
                      method="CG",
@@ -61,7 +61,7 @@ plt.show()
 
 def minimize(X, y, regularization_lambda=0):
     initial_theta = np.zeros((X.shape[1], 1))
-    result = op.minimize(fun=ml.linear_regression_cost_gradient,
+    result = op.minimize(fun=lire.linear_regression_cost_gradient,
                          x0=initial_theta.reshape((-1)),
                          args=(X, y, regularization_lambda),
                          method="CG",
@@ -71,7 +71,7 @@ def minimize(X, y, regularization_lambda=0):
 
 
 def cost(X, y, theta):
-    return ml.linear_regression_cost(X, y, theta)[0][0]
+    return lire.linear_regression_cost(X, y, theta)[0][0]
 
 
 def with_bias(X):
@@ -110,7 +110,7 @@ X_test_poly = normalizer.normalize_matrix(X_test_poly)
 
 regularization_lambda = 1
 
-result = op.minimize(fun=ml.linear_regression_cost_gradient,
+result = op.minimize(fun=lire.linear_regression_cost_gradient,
                      x0=np.zeros(X_train_poly.shape[1] + 1),
                      args=(
                          np.hstack((np.ones((X_train_poly.shape[0], 1)), X_train_poly)), y_train,

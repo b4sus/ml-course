@@ -1,7 +1,8 @@
 import csv
 import random
+
 import numpy as np
-import ml.ml as ml
+import ml.logistic_regression as lori
 import ml.predict as predict
 import ml.feature as feature
 import ml.pipeline as pline
@@ -100,8 +101,8 @@ for polynomial_degree in polynomial_degrees:
     pipeline_pd.bias()
     (theta, X_processed) = pipeline_pd.execute_train(X_train, y_train, regularization_lambda=3)
 
-    j_train.append(ml.logistic_regression_cost(X_processed, y_train, theta))
-    j_cv.append(ml.logistic_regression_cost(pipeline_pd.process_test(X_cv), y_cv, theta))
+    j_train.append(lori.logistic_regression_cost(X_processed, y_train, theta))
+    j_cv.append(lori.logistic_regression_cost(pipeline_pd.process_test(X_cv), y_cv, theta))
 
 plt.figure(0)
 plt.plot(polynomial_degrees, j_train, label="j_train")
@@ -127,8 +128,8 @@ j_cv = []
 for regularization_lambda in lambdas:
     (theta, X_processed) = pipeline.execute_train(X_train, y_train, regularization_lambda=regularization_lambda)
 
-    j_train.append(ml.logistic_regression_cost(X_processed, y_train, theta))
-    j_cv.append(ml.logistic_regression_cost(pipeline.process_test(X_cv), y_cv, theta))
+    j_train.append(lori.logistic_regression_cost(X_processed, y_train, theta))
+    j_cv.append(lori.logistic_regression_cost(pipeline.process_test(X_cv), y_cv, theta))
 
 plt.figure(1)
 plt.plot(lambdas, j_train, label="j_train")
@@ -139,22 +140,22 @@ plt.show()
 
 (theta, X_processed) = pipeline.execute_train(X_train, y_train, regularization_lambda=1)
 
-j_train = ml.logistic_regression_cost(X_processed, y_train, theta)
+j_train = lori.logistic_regression_cost(X_processed, y_train, theta)
 
 print(f"j_train: {j_train}")
 
-predictions = predict.predict(X_processed[:, 1:], theta, ml.logistic_regression_hypothesis)
+predictions = predict.predict(X_processed[:, 1:], theta, lori.logistic_regression_hypothesis)
 
 print(f"train accuracy: {np.mean(predictions == y_train)}")
 
-predictions_validation = predict.predict(pipeline.process_test(X_cv)[:, 1:], theta, ml.logistic_regression_hypothesis)
+predictions_validation = predict.predict(pipeline.process_test(X_cv)[:, 1:], theta, lori.logistic_regression_hypothesis)
 
 print(f"cv accuracy: {np.mean(predictions_validation == y_cv)}")
 
 X_test = create_feature_matrix(test_passengers)
 y_test = create_result_vector(test_passengers)
 
-predictions_test = predict.predict(pipeline.process_test(X_test)[:, 1:], theta, ml.logistic_regression_hypothesis)
+predictions_test = predict.predict(pipeline.process_test(X_test)[:, 1:], theta, lori.logistic_regression_hypothesis)
 
 print(f"test accuracy: {np.mean(predictions_test == y_test)}")
 
@@ -167,7 +168,7 @@ X_test = create_feature_matrix(test_passengers)
 
 X_test = pipeline.process_test(X_test)
 
-predictions_test = predict.predict(X_test[:, 1:], theta, ml.logistic_regression_hypothesis)
+predictions_test = predict.predict(X_test[:, 1:], theta, lori.logistic_regression_hypothesis)
 
 # print(predictions_test)
 

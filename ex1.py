@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import ml.ml as ml
+
+import ml.linear_regression as lire
+from ml.gradient_descent import gradient_descent
 
 data = np.loadtxt("data/ex1data1.txt", delimiter=",")
 
@@ -11,7 +13,7 @@ y = data[:, 1].reshape((m, 1))
 
 x_m = np.hstack((np.ones((m, 1)), x))
 
-(theta, costs) = ml.gradient_descent(x_m, y, ml.linear_regression_cost, ml.linear_regression_cost_derivative)
+(theta, costs) = gradient_descent(x_m, y, lire.linear_regression_cost, lire.linear_regression_cost_derivative)
 
 plt.subplot(211)
 plt.plot(x, y, "xr", x, x_m @ theta)

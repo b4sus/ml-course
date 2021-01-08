@@ -3,7 +3,7 @@ import numpy as np
 import scipy.optimize as op
 
 import ml.feature as ft
-import ml.ml as ml
+import ml.logistic_regression as lore
 import ml.predict as predict
 
 data = np.loadtxt("data/ex2data1.txt", delimiter=",")
@@ -23,7 +23,7 @@ normalized_x_m = np.hstack((np.ones((m, 1)), normalizer.normalized_x_m))
 # (theta, costs) = ml.gradient_descent(normalized_x_m, y, ml.logistic_regression_cost,
 #                                      ml.logistic_regression_cost_derivative, alpha=0.01, num_iter=10000)
 
-(theta, num_of_evaluations, return_code) = op.fmin_tnc(func=ml.logistic_regression_cost_gradient, x0=np.zeros((3, 1)),
+(theta, num_of_evaluations, return_code) = op.fmin_tnc(func=lore.logistic_regression_cost_gradient, x0=np.zeros((3, 1)),
                                                        args=(np.hstack((np.ones((m, 1)), x)), y))
 theta = theta.reshape(len(theta), 1)
 
@@ -41,7 +41,7 @@ normalized_example = np.hstack((np.array([1]), normalizer.normalize(np.array([45
 # print(ml.logistic_regression_hypothesis(normalized_example, theta))
 # print(ml.logistic_regression_hypothesis(np.array([[1, 45, 85]]), theta))
 
-predictions = predict.predict(x, theta, ml.logistic_regression_hypothesis, None)
+predictions = predict.predict(x, theta, lore.logistic_regression_hypothesis, None)
 
 print(np.mean(predictions == y))
 
@@ -53,7 +53,7 @@ for i in range(len(space_x)):
     for j in range(len(space_y)):
         # Z[i, j] = ml.logistic_regression_hypothesis(
         #     np.hstack((np.array([1]), normalizer.normalize(np.array([space_x[i], space_y[j]])))).reshape((1, 3)), theta)
-        Z[i, j] = ml.logistic_regression_hypothesis(
+        Z[i, j] = lore.logistic_regression_hypothesis(
             np.hstack((np.array([1]), np.array([space_x[i], space_y[j]]))).reshape((1, 3)), theta)
         # Z[i, j] = predict.predict(np.array([[space_x[i], space_y[j]]]), theta,
         #                           ml.logistic_regression_hypothesis, None)

@@ -1,7 +1,7 @@
-import scipy.io as sio
-import ml.predict as predict
-import ml.ml as ml
 import numpy as np
+import scipy.io as sio
+
+import ml.neural_network as nn
 
 images_mat = sio.loadmat("ml_course_material/machine-learning-ex3/ex3/ex3data1.mat")
 
@@ -17,7 +17,7 @@ theta_1 = weights_mat["Theta2"]
 print(theta_0.shape)
 print(theta_1.shape)
 
-Output = ml.feed_forward(X, [theta_0, theta_1])
+Output = nn.feed_forward(X, [theta_0, theta_1])
 
 predictions = np.argmax(Output, axis=1).reshape((X.shape[0], 1))
 

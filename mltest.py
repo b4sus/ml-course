@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 
 import ml.feature as feature
-import ml.ml as ml
+import ml.logistic_regression as lori
 
 
 class TestMlMethods(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestMlMethods(unittest.TestCase):
         x = np.array([[1, 1], [1, 2], [1, 1]])
         y = np.array([[1, 0, 1]]).T
         print(x)
-        print(ml.logistic_regression_cost(x, y, theta))
+        print(lori.logistic_regression_cost(x, y, theta))
 
     def test_la_stuff(self):
         v = np.array([[1, 3, 2]]).T
