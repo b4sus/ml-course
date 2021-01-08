@@ -60,12 +60,13 @@ def collaborative_filtering_gradient_check():
 
     (params, shapes) = utils.flatten_and_stack([X, Theta])
 
+    regularization_lambda = 1.5
     def cost_function(theta):
         Matrices = utils.roll(theta, shapes)
-        return cofi.cost_function(Matrices[0], Y, R, Matrices[1])
+        return cofi.cost_function(Matrices[0], Y, R, Matrices[1], regularization_lambda)
 
     numerical_gradient = compute_numerical_gradient(cost_function, params)
-    derivative_gradient = cofi.cost_function_gradient(params, shapes, Y, R)[1][0]
+    derivative_gradient = cofi.cost_function_gradient(params, shapes, Y, R, regularization_lambda)[1][0]
 
     print(np.hstack((derivative_gradient, numerical_gradient)))
 

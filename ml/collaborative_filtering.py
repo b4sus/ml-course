@@ -3,7 +3,7 @@ import numpy as np
 import ml.utils as utils
 
 
-def cost_function(X, Y, R, Theta):
+def cost_function(X, Y, R, Theta, regularization_lambda=0):
     """
 
     :param X: num_movies x num_features
@@ -18,10 +18,18 @@ def cost_function(X, Y, R, Theta):
     assert (num_users, num_features) == Theta.shape
 
     Cost = ((X @ Theta.T) - Y) ** 2
-    return (Cost * R).sum() / 2
+
+    regularization = 0
+    if regularization_lambda:
+        theta_regularization = np.sum(Theta ** 2)
+        x_regularization = np.sum(X ** 2)
+
+        regularization = (regularization_lambda / 2) * (theta_regularization + x_regularization)
+
+    return (Cost * R).sum() / 2 + regularization
 
 
-def cost_function_derivative(X, Y, R, Theta):
+def cost_function_derivative(X, Y, R, Theta, regularization_lambda=0):
     """
 
     :param X: num_movies x num_features
@@ -40,7 +48,10 @@ def cost_function_derivative(X, Y, R, Theta):
         users_who_rated_movie_i = np.nonzero(R[i, :] == 1)[0]
         Y_temp = Y[i, users_who_rated_movie_i]
         Theta_temp = Theta[users_who_rated_movie_i, :]
-        X_grad[i, :] = (X[i, :] @ Theta_temp.T - Y_temp) @ Theta_temp
+        regularization = np.zeros((1, num_features))
+        if regularization_lambda:
+            regularization = regularization_lambda * X[i, :]
+        X_grad[i, :] = (X[i, :] @ Theta_temp.T - Y_temp) @ Theta_temp + regularization
 
     Theta_grad = np.empty((num_users, num_features))
     for j in range(num_users):
@@ -48,16 +59,19 @@ def cost_function_derivative(X, Y, R, Theta):
         Y_temp = Y[movies_rated_by_user_j, j].reshape((-1, 1))  # movies_rated_by_user_j x 1
         X_temp = X[movies_rated_by_user_j, :]  # movies_rated_by_user_j x num_features
         theta = Theta[j, :].T.reshape((-1, 1))  # num_features x 1
-        Theta_grad[j, :] = (X_temp @ theta - Y_temp).T @ X_temp
+        regularization = np.zeros((1, num_features))
+        if regularization_lambda:
+            regularization = regularization_lambda * Theta[j, :]
+        Theta_grad[j, :] = (X_temp @ theta - Y_temp).T @ X_temp + regularization
 
     return X_grad, Theta_grad
 
 
-def cost_function_gradient(params, shapes, Y, R):
+def cost_function_gradient(params, shapes, Y, R, regularization_lambda=0):
     assert len(shapes) == 2
     Matrices = utils.roll(params, shapes)
     X =Matrices[0]
     Theta =Matrices[1]
 
-    (X_grad, Theta_grad) = cost_function_derivative(X, Y, R, Theta)
-    return cost_function(X, Y, R, Theta), utils.flatten_and_stack([X_grad, Theta_grad])
+    (X_grad, Theta_grad) = cost_function_derivative(X, Y, R, Theta, regularization_lambda)
+    return cost_function(X, Y, R, Theta, regularization_lambda), utils.flatten_and_stack([X_grad, Theta_grad])
