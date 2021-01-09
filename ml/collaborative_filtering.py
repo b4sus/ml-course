@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.optimize as op
 
 import ml.utils as utils
 
@@ -70,8 +71,42 @@ def cost_function_derivative(X, Y, R, Theta, regularization_lambda=0):
 def cost_function_gradient(params, shapes, Y, R, regularization_lambda=0):
     assert len(shapes) == 2
     Matrices = utils.roll(params, shapes)
-    X =Matrices[0]
-    Theta =Matrices[1]
+    X = Matrices[0]
+    Theta = Matrices[1]
 
     (X_grad, Theta_grad) = cost_function_derivative(X, Y, R, Theta, regularization_lambda)
-    return cost_function(X, Y, R, Theta, regularization_lambda), utils.flatten_and_stack([X_grad, Theta_grad])
+    return cost_function(X, Y, R, Theta, regularization_lambda), utils.flatten_and_stack([X_grad, Theta_grad])[0].reshape((-1))
+
+
+def learn(Y, R, num_features, regularization_lambda=0):
+    """
+
+    :param Y: num_movies x num_users
+    :param R: num_movies x num_users
+    :param num_features: how many features should be generated
+    :param regularization_lambda:
+    :return:
+    """
+    assert Y.shape == R.shape
+
+    num_movies = Y.shape[0]
+    num_users = Y.shape[1]
+
+    X = random_initialize((num_movies, num_features))
+    Theta = random_initialize((num_users, num_features))
+
+    optimize_result = op.minimize(fun=cost_function_gradient,
+                                  x0=utils.flatten_and_stack([X, Theta])[0],
+                                  args=([X.shape, Theta.shape], Y, R, regularization_lambda),
+                                  method="CG",
+                                  jac=True)
+    Matrices = utils.roll(optimize_result.x, [X.shape, Theta.shape])
+
+    X = Matrices[0]
+    Theta = Matrices[1]
+
+    return X, Theta
+
+
+def random_initialize(shape, rng=np.random.default_rng()):
+    return rng.standard_normal(shape)

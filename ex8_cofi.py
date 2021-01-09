@@ -20,6 +20,19 @@ def check_cost_function_with_preloaded_data(Y, R):
     print(f"expected regularized cost is 31.34, actual was {cofi.cost_function(X, Y, R, Theta, 1.5)}")
 
 
+def mean_normalization(Y, R):
+    # movie_means = (Y * R).mean(1).reshape((-1, 1))
+    # Movie_means = movie_means.repeat(Y.shape[1], 1)
+    # return Y - (Movie_means * R), movie_means
+
+    movie_means = np.empty((Y.shape[0], 1))
+    Y_norm = np.empty(Y.shape)
+    for i in range(len(Y)):
+        movie_means[i, 0] = Y[i, np.nonzero(R[i, :])[0]].mean()
+        Y_norm[i, :] = Y[i, :] - movie_means[i, 0]
+    return Y_norm, movie_means
+
+
 if __name__ == "__main__":
     movies_data = sio.loadmat("ml_course_material/machine-learning-ex8/ex8/ex8_movies.mat")
     Y = movies_data["Y"]
@@ -40,9 +53,22 @@ if __name__ == "__main__":
     my_ratings[66] = 5
     my_ratings[68] = 5
     my_ratings[72] = 5
+    my_ratings[77] = 1
     my_ratings[111] = 1
     my_ratings[150] = 1
     my_ratings[150] = 1
+
+    Y = np.hstack((my_ratings.reshape((-1, 1)), Y))
+    R = np.hstack((my_ratings.reshape((-1, 1)) != 0, R))
+
+    Y_norm, movie_means = mean_normalization(Y, R)
+
+    X, Theta = cofi.learn(Y_norm, R, 10, 1.5)
+
+    my_predictions = X @ Theta[0, :].T
+
+    for i, movie in enumerate(movies):
+        print(f"Prediction for movie {movie} is {my_predictions[i] + movie_means[i, 0]}")
 
 
 
