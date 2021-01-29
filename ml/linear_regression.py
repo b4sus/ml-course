@@ -1,3 +1,5 @@
+import numpy as np
+
 def linear_regression_cost(x_m, y, theta, regularization_lambda=0):
     """
     :param x_m: matrix of size m x n
@@ -40,3 +42,7 @@ def linear_regression_cost_gradient(theta, X, y, regularization_lambda=0):
     cost = linear_regression_cost(X, y, theta, regularization_lambda)
     gradient = linear_regression_cost_derivative(X, y, theta, regularization_lambda)
     return cost, gradient.reshape((-1))
+
+def rmse(theta, X, y):
+    h_x = X @ theta
+    return np.sqrt(((y - h_x) ** 2).sum() / len(y))
