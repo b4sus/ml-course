@@ -4,17 +4,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.optimize as op
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import make_column_transformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import cross_val_score, GridSearchCV, train_test_split, StratifiedShuffleSplit
+from sklearn.model_selection import cross_val_score, GridSearchCV, train_test_split, StratifiedShuffleSplit, RandomizedSearchCV
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
 from sklearn import svm
+from sklearn.neighbors import KNeighborsRegressor
 
 import ml.linear_regression as lire
+
+drop_columns = ["Id", "SalePrice", "3SsnPorch", "BsmtFinSF2", "BsmtHalfBath", "MiscVal", "YrSold", "MoSold"]
 
 
 def learn_manually_with_scipy(X, y, regularization_lambda):
@@ -41,7 +45,9 @@ def predict_test_houses(pipeline, estimator):
 
     test_ids = pd.DataFrame(test_houses["Id"]).set_index("Id")
 
-    X_real_test = pipeline.transform(test_houses.drop("Id", axis=1))
+    test_houses["SoldMonths"] = test_houses.apply(nr_months_since_2006_till_sold, axis=1)
+
+    X_real_test = pipeline.transform(test_houses.drop(drop_columns, axis=1, errors="ignore"))
     X_real_test = np.hstack((np.ones((X_real_test.shape[0], 1)), X_real_test))
 
     y_real_pred = estimator.predict(X_real_test)
@@ -52,6 +58,7 @@ def predict_test_houses(pipeline, estimator):
 
 
 def prepare_pipeline():
+
     num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
 
     quality_categories = ["NA", "Po", "Fa", "TA", "Gd", "Ex"]
@@ -93,12 +100,20 @@ def grid_search_ridge(X, y):
     print(f"Best score {-grid_search.best_score_}")
     return grid_search.best_estimator_
 
+def grid_search_k_neighbors(X, y):
+    grid_search = GridSearchCV(KNeighborsRegressor(), [{"n_neighbors": range(1, 10)}], cv=5,
+                               scoring="neg_root_mean_squared_error",
+                               return_train_score=True)
+    grid_search.fit(X, y.reshape(-1))
+    print(f"Best estimator {grid_search.best_estimator_}")
+    print(f"Best score {-grid_search.best_score_}")
+    return grid_search.best_estimator_
+
 
 def grid_search_random_forest(X, y):
     param_grid = [
     {"n_estimators": [20, 30, 90, 110, 120], "max_features": [1, 3, 9, 15, 27]}
     ]
-
     grid_search = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, scoring="neg_root_mean_squared_error", return_train_score=True)
     grid_search.fit(X, y.reshape(-1))
     print(f"Best estimator {grid_search.best_estimator_}")
@@ -106,10 +121,18 @@ def grid_search_random_forest(X, y):
     return grid_search.best_estimator_
 
 
+def nr_months_since_2006_till_sold(house):
+    sold_date = np.datetime64(f"{house['YrSold']}-{house['MoSold']:02d}")
+    return (sold_date - np.datetime64("2006-01")) / np.timedelta64(1, "M")
+
+
 if __name__ == "__main__":
     houses = pd.read_csv("house_prices/train.csv")
     prices = houses["SalePrice"]
-    houses = houses.drop(["Id", "SalePrice", "MoSold", "3SsnPorch", "BsmtFinSF2", "BsmtHalfBath", "MiscVal"], axis=1)
+
+    houses["SoldMonths"] = houses.apply(nr_months_since_2006_till_sold, axis=1)
+
+    houses = houses.drop(drop_columns, axis=1)
 
     # trainset.hist()
     # plt.show()
@@ -143,7 +166,7 @@ if __name__ == "__main__":
     #                          scoring="neg_mean_squared_error", cv=10)
     # print_cv_scores(np.sqrt(-scores))
 
-    best_ridge_estimator = grid_search_random_forest(X, y)
+    best_estimator = grid_search_k_neighbors(X, y)
 
     y_test = test_prices.to_numpy().reshape((-1, 1))
     X_test = full_pipeline.transform(test_houses)
@@ -151,10 +174,9 @@ if __name__ == "__main__":
     print(f"test set RMSE from learning manually is {lire.rmse(theta_scipy, X_test, y_test)}")
 
     # regr = learn_with_sklearn(X, y)
-    regr = best_ridge_estimator
     print(
-        f"training set RMSE from learning with sklearn is {mean_squared_error(y, regr.predict(X), squared=False)}")
+        f"training set RMSE from learning with sklearn is {mean_squared_error(y, best_estimator.predict(X), squared=False)}")
     print(
-        f"test set RMSE from learning with sklearn is {mean_squared_error(y_test, regr.predict(X_test), squared=False)}")
+        f"test set RMSE from learning with sklearn is {mean_squared_error(y_test, best_estimator.predict(X_test), squared=False)}")
 
-    # predict_test_houses(full_pipeline, regr)
+    predict_test_houses(full_pipeline, best_estimator)
