@@ -1,24 +1,20 @@
-import csv
-
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.optimize as op
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import make_column_transformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.impute import SimpleImputer
+from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import cross_val_score, GridSearchCV, train_test_split, StratifiedShuffleSplit, RandomizedSearchCV
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
-from sklearn import svm
+from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler, PolynomialFeatures
 
 import ml.linear_regression as lire
 
-drop_columns = ["Id", "SalePrice", "3SsnPorch", "BsmtFinSF2", "BsmtHalfBath", "MiscVal", "YrSold", "MoSold"]
+drop_columns = ["Id", "SalePrice", "3SsnPorch", "BsmtFinSF2", "BsmtHalfBath", "MiscVal", "YrSold", "MoSold",
+                "YearRemodAdd"]
 
 
 def learn_manually_with_scipy(X, y, regularization_lambda):
@@ -45,10 +41,10 @@ def predict_test_houses(pipeline, estimator):
 
     test_ids = pd.DataFrame(test_houses["Id"]).set_index("Id")
 
-    test_houses["SoldMonths"] = test_houses.apply(nr_months_since_2006_till_sold, axis=1)
+    preprocess_houses(test_houses)
 
     X_real_test = pipeline.transform(test_houses.drop(drop_columns, axis=1, errors="ignore"))
-    X_real_test = np.hstack((np.ones((X_real_test.shape[0], 1)), X_real_test))
+    # X_real_test = np.hstack((np.ones((X_real_test.shape[0], 1)), X_real_test))
 
     y_real_pred = estimator.predict(X_real_test)
 
@@ -58,27 +54,68 @@ def predict_test_houses(pipeline, estimator):
 
 
 def prepare_pipeline():
-
-    num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
+    num_pipeline = make_pipeline(SimpleImputer(strategy="median"),
+                                 PolynomialFeatures(include_bias=False, interaction_only=True), StandardScaler())
+    # num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
 
     quality_categories = ["NA", "Po", "Fa", "TA", "Gd", "Ex"]
 
     full_pipeline = make_column_transformer(
         (num_pipeline, list(train_houses_numeric_only)),
+        (OneHotEncoder(
+            categories=[[str(n) for n in [20, 30, 40, 45, 50, 60, 70, 75, 80, 85, 90, 120, 150, 160, 180, 190]]]),
+         ["MSSubClass"]),
         (OneHotEncoder(),
-         ["LotShape", "LandContour", "Neighborhood", "Condition1", "BldgType", "HouseStyle", "Foundation"]),
-        (make_pipeline(SimpleImputer(strategy="most_frequent"), OneHotEncoder()),
-         ["BsmtQual", "BsmtCond", "BsmtExposure", "KitchenQual", "Functional", "SaleType"]),
-        (make_pipeline(SimpleImputer(strategy="constant", fill_value="NA"), OneHotEncoder()),
-         ["GarageType", "GarageFinish", "Fence", "BsmtExposure",
-          "SaleCondition"]),
-        (make_pipeline(SimpleImputer(strategy="most_frequent"), OrdinalEncoder(categories=[quality_categories]),
-                       StandardScaler()), ["KitchenQual"]),
+         ["LandContour", "Neighborhood", "Condition1", "HouseStyle", "HouseStyle", "MasVnrType"]),
         (make_pipeline(SimpleImputer(strategy="constant", fill_value="NA"),
                        OrdinalEncoder(
-                           categories=[quality_categories, quality_categories, quality_categories, quality_categories,
+                           categories=[quality_categories,
+                                       quality_categories,
+                                       quality_categories,
+                                       quality_categories,
+                                       ["NA", "Grvl", "Pave"],
+                                       ["IR3", "IR2", "IR1", "Reg"],
+                                       # ["Low", "HLS", "Bnk", "Lvl"],
+                                       ["Inside", "Corner", "CulDSac", "FR2", "FR3"],
+                                       # ["Gtl", "Mod", "Sev"],
+                                       ["1Fam", "2fmCon", "Duplex", "TwnhsE", "Twnhs"],
+                                       ["Flat", "Gable", "Gambrel", "Hip", "Mansard", "Shed"],
+                                       ["BrkTil", "CBlock", "PConc", "Slab", "Stone", "Wood"],
+                                       # quality_categories,
+                                       # quality_categories,
                                        ]), StandardScaler()),
-         ["FireplaceQu", "GarageQual", "GarageCond", "PoolQC"]),
+         [
+             "FireplaceQu",
+             "GarageQual",
+             "GarageCond",
+             "PoolQC",
+             "Alley",
+             "LotShape",
+             # "LandContour",
+             "LotConfig",
+             # "LandSlope",
+             "BldgType",
+             "RoofStyle",
+             "Foundation",
+             # "BsmtQual",
+             # "BsmtCond",
+         ]),
+        (make_pipeline(SimpleImputer(strategy="most_frequent"), OneHotEncoder()),
+         ["KitchenQual", "Functional", "SaleType", "MSZoning", "BsmtExposure"]),
+        (make_pipeline(SimpleImputer(strategy="constant", fill_value="NA"), OneHotEncoder()),
+         ["GarageType", "GarageFinish", "Fence",
+          "SaleCondition"]),
+        (make_pipeline(SimpleImputer(strategy="most_frequent"),
+                       OrdinalEncoder(categories=[
+                           quality_categories,
+                           quality_categories,
+                           quality_categories,
+                       ]),
+                       StandardScaler()), [
+             "KitchenQual",
+             "BsmtQual",
+             "BsmtCond"
+         ]),
         (OrdinalEncoder(categories=[quality_categories, quality_categories]), ["ExterQual", "ExterCond"])
     )
 
@@ -92,13 +129,14 @@ def print_cv_scores(scores):
 
 
 def grid_search_ridge(X, y):
-    grid_search = GridSearchCV(Ridge(), [{"alpha": [0.1, 0.3, 1, 3, 9, 11, 12, 13, 14, 15, 27, 100]}], cv=5,
+    grid_search = GridSearchCV(Ridge(), [{"alpha": [0.1, 0.3, 1, 3, 9, 15]}], cv=5,
                                scoring="neg_root_mean_squared_error",
                                return_train_score=True)
     grid_search.fit(X, y.reshape(-1))
     print(f"Best estimator {grid_search.best_estimator_}")
     print(f"Best score {-grid_search.best_score_}")
     return grid_search.best_estimator_
+
 
 def grid_search_k_neighbors(X, y):
     grid_search = GridSearchCV(KNeighborsRegressor(), [{"n_neighbors": range(1, 10)}], cv=5,
@@ -112,9 +150,10 @@ def grid_search_k_neighbors(X, y):
 
 def grid_search_random_forest(X, y):
     param_grid = [
-    {"n_estimators": [20, 30, 90, 110, 120], "max_features": [1, 3, 9, 15, 27]}
+        {"n_estimators": [20, 30, 90, 110, 120], "max_features": [1, 3, 9, 15, 27]}
     ]
-    grid_search = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, scoring="neg_root_mean_squared_error", return_train_score=True)
+    grid_search = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, scoring="neg_root_mean_squared_error",
+                               return_train_score=True)
     grid_search.fit(X, y.reshape(-1))
     print(f"Best estimator {grid_search.best_estimator_}")
     print(f"Best score {-grid_search.best_score_}")
@@ -126,11 +165,21 @@ def nr_months_since_2006_till_sold(house):
     return (sold_date - np.datetime64("2006-01")) / np.timedelta64(1, "M")
 
 
+def preprocess_houses(houses):
+    houses["MSSubClass"] = houses["MSSubClass"].astype(str)
+    houses["SoldMonths"] = houses.apply(nr_months_since_2006_till_sold, axis=1)
+
+    def remodeled(house):
+        return 0 if house["YearRemodAdd"] == house["YearBuilt"] else 1
+
+    houses["Remodeled"] = houses.apply(remodeled, axis=1)
+
+
 if __name__ == "__main__":
     houses = pd.read_csv("house_prices/train.csv")
     prices = houses["SalePrice"]
 
-    houses["SoldMonths"] = houses.apply(nr_months_since_2006_till_sold, axis=1)
+    preprocess_houses(houses)
 
     houses = houses.drop(drop_columns, axis=1)
 
@@ -156,22 +205,23 @@ if __name__ == "__main__":
 
     y = train_prices.to_numpy().reshape((-1, 1))
     X = train_transformed
-    X = np.hstack((np.ones((X.shape[0], 1)), X))
+    # X = np.hstack((np.ones((X.shape[0], 1)), X))
 
-    theta_scipy = learn_manually_with_scipy(X, y, 1)
+    # theta_scipy = learn_manually_with_scipy(X, y, 1)
 
-    print(f"training set RMSE from learning manually is {lire.rmse(theta_scipy, X, y)}")
+    # print(f"training set RMSE from learning manually is {lire.rmse(theta_scipy, X, y)}")
 
     # scores = cross_val_score(RandomForestClassifier(max_features=10), X, y.reshape(-1),
     #                          scoring="neg_mean_squared_error", cv=10)
     # print_cv_scores(np.sqrt(-scores))
 
-    best_estimator = grid_search_k_neighbors(X, y)
+    best_estimator = grid_search_ridge(X, y)
 
     y_test = test_prices.to_numpy().reshape((-1, 1))
     X_test = full_pipeline.transform(test_houses)
-    X_test = np.hstack((np.ones((X_test.shape[0], 1)), X_test))
-    print(f"test set RMSE from learning manually is {lire.rmse(theta_scipy, X_test, y_test)}")
+    # X_test = np.hstack((np.ones((X_test.shape[0], 1)), X_test))
+
+    # print(f"test set RMSE from learning manually is {lire.rmse(theta_scipy, X_test, y_test)}")
 
     # regr = learn_with_sklearn(X, y)
     print(
