@@ -9,9 +9,11 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler, PolynomialFeatures
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler, PolynomialFeatures, MinMaxScaler
+from sklearn.svm import SVR
 
 import ml.linear_regression as lire
+import ml.anomaly_detection as ad
 
 drop_columns = ["Id", "SalePrice", "3SsnPorch", "BsmtFinSF2", "BsmtHalfBath", "MiscVal", "YrSold", "MoSold",
                 "YearRemodAdd"]
@@ -54,9 +56,9 @@ def predict_test_houses(pipeline, estimator):
 
 
 def prepare_pipeline():
-    num_pipeline = make_pipeline(SimpleImputer(strategy="median"),
-                                 PolynomialFeatures(include_bias=False, interaction_only=True), StandardScaler())
-    # num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
+    # num_pipeline = make_pipeline(SimpleImputer(strategy="median"),
+    #                              PolynomialFeatures(include_bias=False, interaction_only=True), StandardScaler())
+    num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
 
     quality_categories = ["NA", "Po", "Fa", "TA", "Gd", "Ex"]
 
@@ -66,7 +68,8 @@ def prepare_pipeline():
             categories=[[str(n) for n in [20, 30, 40, 45, 50, 60, 70, 75, 80, 85, 90, 120, 150, 160, 180, 190]]]),
          ["MSSubClass"]),
         (OneHotEncoder(),
-         ["LandContour", "Neighborhood", "Condition1", "HouseStyle", "HouseStyle", "MasVnrType"]),
+         ["LandContour", "Neighborhood", "Condition1", "HouseStyle", "HouseStyle"]),
+        (make_pipeline(SimpleImputer(strategy="constant", fill_value="None"), OneHotEncoder()), ["MasVnrType"]),
         (make_pipeline(SimpleImputer(strategy="constant", fill_value="NA"),
                        OrdinalEncoder(
                            categories=[quality_categories,
@@ -129,7 +132,7 @@ def print_cv_scores(scores):
 
 
 def grid_search_ridge(X, y):
-    grid_search = GridSearchCV(Ridge(), [{"alpha": [0.1, 0.3, 1, 3, 9, 15]}], cv=5,
+    grid_search = GridSearchCV(Ridge(), [{"alpha": [0.1, 0.3] + np.arange(0.5, 120, 0.5).tolist()}], cv=5,
                                scoring="neg_root_mean_squared_error",
                                return_train_score=True)
     grid_search.fit(X, y.reshape(-1))
@@ -160,23 +163,43 @@ def grid_search_random_forest(X, y):
     return grid_search.best_estimator_
 
 
-def nr_months_since_2006_till_sold(house):
-    sold_date = np.datetime64(f"{house['YrSold']}-{house['MoSold']:02d}")
-    return (sold_date - np.datetime64("2006-01")) / np.timedelta64(1, "M")
+def grid_search_svm(X, y):
+
+    param_grid = [
+        {"C": [60, 70, 80, 90, 100, 110], "kernel":["rbf", "linear", "poly"]}
+    ]
+    grid_search = GridSearchCV(SVR(), param_grid, cv=5, scoring="neg_root_mean_squared_error",
+                               return_train_score=True)
+    grid_search.fit(X, y.reshape(-1))
+    print(f"Best estimator {grid_search.best_estimator_}")
+    print(f"Best score {-grid_search.best_score_}")
+    return grid_search.best_estimator_
 
 
 def preprocess_houses(houses):
+    def nr_months_since_2006_till_sold(house):
+        sold_date = np.datetime64(f"{house['YrSold']}-{house['MoSold']:02d}")
+        return (sold_date - np.datetime64("2006-01")) / np.timedelta64(1, "M")
+
     houses["MSSubClass"] = houses["MSSubClass"].astype(str)
     houses["SoldMonths"] = houses.apply(nr_months_since_2006_till_sold, axis=1)
+    houses["RemodeledAgo"] = houses["YearRemodAdd"].max() - houses["YearRemodAdd"]
 
-    def remodeled(house):
-        return 0 if house["YearRemodAdd"] == house["YearBuilt"] else 1
 
-    houses["Remodeled"] = houses.apply(remodeled, axis=1)
+def detect_anomalies(houses):
+    # houses_num = houses.select_dtypes(include=np.number).drop(["Id", "GarageYrBlt", "LotFrontage", "MasVnrArea"], axis=1)
+    houses_num = houses["SalePrice"]
+    X = houses_num.to_numpy(na_value=0).reshape((-1, 1))
+    mu, sigma2 = ad.estimate_gaussian(X)
+    p = ad.gaussian(X, mu, sigma2)
+    p
 
 
 if __name__ == "__main__":
     houses = pd.read_csv("house_prices/train.csv")
+
+    detect_anomalies(houses)
+
     prices = houses["SalePrice"]
 
     preprocess_houses(houses)
