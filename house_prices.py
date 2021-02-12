@@ -8,6 +8,7 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler, PolynomialFeatures, MinMaxScaler
 from sklearn.svm import SVR
@@ -56,9 +57,9 @@ def predict_test_houses(pipeline, estimator):
 
 
 def prepare_pipeline():
-    # num_pipeline = make_pipeline(SimpleImputer(strategy="median"),
-    #                              PolynomialFeatures(include_bias=False, interaction_only=True), StandardScaler())
-    num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
+    num_pipeline = make_pipeline(SimpleImputer(strategy="median"),
+                                 PolynomialFeatures(include_bias=False, interaction_only=False), StandardScaler())
+    # num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
 
     quality_categories = ["NA", "Po", "Fa", "TA", "Gd", "Ex"]
 
@@ -140,6 +141,16 @@ def grid_search_ridge(X, y):
     print(f"Best score {-grid_search.best_score_}")
     return grid_search.best_estimator_
 
+
+def nn(X, y):
+    # grid_search = GridSearchCV(MLPRegressor(max_iter=10000), [{"hidden_layer_sizes": [(120)]}], cv=3)
+    # grid_search.fit(X, y.ravel())
+    # print(f"Best estimator {grid_search.best_estimator_}")
+    # print(f"Best score {-grid_search.best_score_}")
+    # return grid_search.best_estimator_
+    mlp = MLPRegressor(hidden_layer_sizes=60, max_iter=20000)
+    mlp.fit(X, y.ravel())
+    return mlp
 
 def grid_search_k_neighbors(X, y):
     grid_search = GridSearchCV(KNeighborsRegressor(), [{"n_neighbors": range(1, 10)}], cv=5,
@@ -239,6 +250,7 @@ if __name__ == "__main__":
     # print_cv_scores(np.sqrt(-scores))
 
     best_estimator = grid_search_ridge(X, y)
+    # best_estimator = nn(X, y)
 
     y_test = test_prices.to_numpy().reshape((-1, 1))
     X_test = full_pipeline.transform(test_houses)
