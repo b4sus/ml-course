@@ -1,10 +1,18 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 
 import ml.feature as feature
 
 
-def learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun):
+class EstimatorPredictor:
+    def fit(self, X, y):
+        pass
+
+    def predict(self, X):
+        pass
+
+def learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv, estimator_predictor, cost_fun):
     """
     Trains theta with X_train and y_train using minimize_fun with different training size (1 to full).
     Calculates and return training set and cross-validation error.
@@ -26,10 +34,17 @@ def learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv,
         X_sub_train = np.hstack((np.ones((X_sub_train.shape[0], 1)), X_sub_train))
 
         y_sub_train = y_train[:X_sub_train.shape[0]]
-        theta = minimize_fun(X_sub_train, y_sub_train)
+        estimator_predictor.fit(X_sub_train, y_sub_train)
 
-        j_train.append(cost_fun(X_sub_train, y_sub_train, theta))
-        j_cv.append(cost_fun(X_cv_with_bias, y_cv, theta))
+        j_train.append(cost_fun(y_sub_train, estimator_predictor.predict(X_sub_train)))
+        j_cv.append(cost_fun(y_cv, estimator_predictor.predict(X_cv_with_bias)))
+
+    plt.plot(list(range(1, len(j_train) + 1)), j_train, label="j_train")
+    plt.plot(list(range(1, len(j_train) + 1)), j_cv, label="j_cv")
+    plt.xlabel("training set size")
+    plt.ylabel("error")
+    plt.legend()
+    plt.show()
 
     return j_train, j_cv
 

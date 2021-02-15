@@ -1,3 +1,5 @@
+from functools import partial
+
 import numpy as np
 import pandas as pd
 import scipy.optimize as op
@@ -13,8 +15,9 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler, PolynomialFeatures, MinMaxScaler
 from sklearn.svm import SVR
 
-import ml.linear_regression as lire
 import ml.anomaly_detection as ad
+import ml.learning_curves as lc
+import ml.linear_regression as lire
 
 drop_columns = ["Id", "SalePrice", "3SsnPorch", "BsmtFinSF2", "BsmtHalfBath", "MiscVal", "YrSold", "MoSold",
                 "YearRemodAdd"]
@@ -237,30 +240,33 @@ if __name__ == "__main__":
 
     train_transformed = full_pipeline.fit_transform(train_houses)
 
-    y = train_prices.to_numpy().reshape((-1, 1))
-    X = train_transformed
-    # X = np.hstack((np.ones((X.shape[0], 1)), X))
+    y_train = train_prices.to_numpy().reshape((-1, 1))
+    X_train = train_transformed
+    # X_train = np.hstack((np.ones((X.shape[0], 1)), X_train))
 
-    # theta_scipy = learn_manually_with_scipy(X, y, 1)
+    # theta_scipy = learn_manually_with_scipy(X_train, y_train, 1)
 
-    # print(f"training set RMSE from learning manually is {lire.rmse(theta_scipy, X, y)}")
+    # print(f"training set RMSE from learning manually is {lire.rmse(theta_scipy, X_train, y_train)}")
 
-    # scores = cross_val_score(RandomForestClassifier(max_features=10), X, y.reshape(-1),
+    # scores = cross_val_score(RandomForestClassifier(max_features=10), X_train, y_train.reshape(-1),
     #                          scoring="neg_mean_squared_error", cv=10)
     # print_cv_scores(np.sqrt(-scores))
 
-    best_estimator = grid_search_ridge(X, y)
-    # best_estimator = nn(X, y)
+    # best_estimator = grid_search_ridge(X_train, y_train)
+    # best_estimator = nn(X_train, y_train)
 
     y_test = test_prices.to_numpy().reshape((-1, 1))
     X_test = full_pipeline.transform(test_houses)
     # X_test = np.hstack((np.ones((X_test.shape[0], 1)), X_test))
 
+    lc.learning_curves_of_different_training_set_size(X_train, y_train, X_test, y_test, Ridge(fit_intercept=False),
+                                                      partial(mean_squared_error, squared=False))
+
     # print(f"test set RMSE from learning manually is {lire.rmse(theta_scipy, X_test, y_test)}")
 
     # regr = learn_with_sklearn(X, y)
     print(
-        f"training set RMSE from learning with sklearn is {mean_squared_error(y, best_estimator.predict(X), squared=False)}")
+        f"training set RMSE from learning with sklearn is {mean_squared_error(y_train, best_estimator.predict(X_train), squared=False)}")
     print(
         f"test set RMSE from learning with sklearn is {mean_squared_error(y_test, best_estimator.predict(X_test), squared=False)}")
 

@@ -31,7 +31,7 @@ cost = lire.linear_regression_cost(np.hstack((np.ones((len(X_train), 1)), X_trai
 print(f"cost={cost}")
 
 gradient = lire.linear_regression_cost_derivative(np.hstack((np.ones((len(X_train), 1)), X_train)), y_train,
-                                                np.array([[1], [1]]), 1)
+                                                  np.array([[1], [1]]), 1)
 
 print(gradient)
 
@@ -70,7 +70,7 @@ def minimize(X, y, regularization_lambda=0):
     return result.x.reshape((-1, 1))
 
 
-def cost(X, y, theta):
+def cost_lire(X, y, theta):
     return lire.linear_regression_cost(X, y, theta)[0][0]
 
 
@@ -78,17 +78,29 @@ def with_bias(X):
     return np.hstack((np.ones((X.shape[0], 1)), X))
 
 
-(j_train, j_cv) = lc.learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv, minimize, cost)
+class LinearRegressionEstimatorPredictor(lc.EstimatorPredictor):
+    def __init__(self, regularization_lambda=0):
+        self.regularization_lambda = regularization_lambda
+
+    def fit(self, X, y):
+        self.theta = minimize(X, y, self.regularization_lambda)
+
+    def predict(self, X):
+        return X @ self.theta
+
+
+def cost(y, y_pred):
+    m = len(y)
+    diff = y_pred - y
+    return ((diff.T @ diff) / (2 * m))[0][0]
+
 
 plt.figure(1)
-plt.plot(list(range(1, len(j_train) + 1)), j_train, label="j_train")
-plt.plot(list(range(1, len(j_train) + 1)), j_cv, label="j_cv")
-plt.xlabel("training set size")
-plt.ylabel("error")
-plt.legend()
-plt.show()
+(j_train, j_cv) = lc.learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv,
+                                                                    LinearRegressionEstimatorPredictor(), cost)
 
-(j_train, j_cv) = lc.learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv, minimize, cost, 12)
+(j_train, j_cv) = lc.learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv, minimize, cost_lire,
+                                                                    12)
 
 plt.figure(2)
 plt.plot(list(range(1, len(j_train) + 1)), j_train, label="j_train")
@@ -132,7 +144,7 @@ plt.show()
 (j_train, j_cv) = lc.learning_curves_of_different_training_set_size(X_train_poly, y_train, X_cv_poly, y_cv,
                                                                     partial(minimize,
                                                                             regularization_lambda=regularization_lambda),
-                                                                    cost)
+                                                                    cost_lire)
 
 plt.figure(4)
 plt.plot(list(range(1, len(j_train) + 1)), j_train, label="j_train")
@@ -143,7 +155,7 @@ plt.legend()
 plt.show()
 
 (j_train, j_cv, regularization_lambdas) = lc.learning_curves_of_different_lambda(X_train_poly, y_train, X_cv_poly, y_cv,
-                                                                                 minimize, cost)
+                                                                                 minimize, cost_lire)
 
 plt.figure(5)
 plt.plot(regularization_lambdas, j_train, label="j_train")
@@ -158,8 +170,8 @@ theta = minimize(with_bias(X_train_poly), y_train, 3)
 print(f"cv error: {cost(with_bias(X_cv_poly), y_cv, theta)}")
 print(f"test error: {cost(with_bias(X_test_poly), y_test, theta)}")
 
-(j_train_means, j_cv_means) = lc.learning_curves_on_random_sets(X_train_poly, y_train, X_cv_poly, y_cv, minimize, cost,
-                                                                0.01)
+(j_train_means, j_cv_means) = lc.learning_curves_on_random_sets(X_train_poly, y_train, X_cv_poly, y_cv, minimize,
+                                                                cost_lire, 0.01)
 plt.figure(6)
 plt.plot(list(j_train_means.keys()), list(j_train_means.values()), label="j_train_means")
 plt.plot(list(j_cv_means.keys()), list(j_cv_means.values()), label="j_cv_means")
