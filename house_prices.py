@@ -6,7 +6,7 @@ import scipy.optimize as op
 from sklearn.compose import make_column_transformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, ElasticNetCV
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
 from sklearn.neighbors import KNeighborsRegressor
@@ -60,9 +60,9 @@ def predict_test_houses(pipeline, estimator):
 
 
 def prepare_pipeline():
-    num_pipeline = make_pipeline(SimpleImputer(strategy="median"),
-                                 PolynomialFeatures(include_bias=False, interaction_only=False), StandardScaler())
-    # num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
+    # num_pipeline = make_pipeline(SimpleImputer(strategy="median"),
+    #                              PolynomialFeatures(include_bias=False), StandardScaler())
+    num_pipeline = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
 
     quality_categories = ["NA", "Po", "Fa", "TA", "Gd", "Ex"]
 
@@ -135,8 +135,16 @@ def print_cv_scores(scores):
     print(f"Std: {scores.std()}")
 
 
+def elastic_net(X, y):
+    elastic_net_cv = ElasticNetCV(cv=5, random_state=15, l1_ratio=0.01)
+    elastic_net_cv = Ridge()
+    elastic_net_cv.fit(X, y.ravel())
+    print(f"Best alpha {elastic_net_cv.alpha_}")
+    return elastic_net_cv
+
+
 def grid_search_ridge(X, y):
-    grid_search = GridSearchCV(Ridge(), [{"alpha": [0.1, 0.3] + np.arange(0.5, 120, 0.5).tolist()}], cv=5,
+    grid_search = GridSearchCV(Ridge(), [{"alpha": [0.1, 0.3, 0.5, 1], "solver":["sag", "cholesky"]}], cv=5,
                                scoring="neg_root_mean_squared_error",
                                return_train_score=True)
     grid_search.fit(X, y.reshape(-1))
@@ -252,6 +260,7 @@ if __name__ == "__main__":
     #                          scoring="neg_mean_squared_error", cv=10)
     # print_cv_scores(np.sqrt(-scores))
 
+    best_estimator = elastic_net(X_train, y_train)
     # best_estimator = grid_search_ridge(X_train, y_train)
     # best_estimator = nn(X_train, y_train)
 
@@ -259,8 +268,8 @@ if __name__ == "__main__":
     X_test = full_pipeline.transform(test_houses)
     # X_test = np.hstack((np.ones((X_test.shape[0], 1)), X_test))
 
-    lc.learning_curves_of_different_training_set_size(X_train, y_train, X_test, y_test, Ridge(fit_intercept=False),
-                                                      partial(mean_squared_error, squared=False))
+    # lc.learning_curves_of_different_training_set_size(X_train, y_train, X_test, y_test, Ridge(solver="sag", fit_intercept=False),
+    #                                                   partial(mean_squared_error, squared=False))
 
     # print(f"test set RMSE from learning manually is {lire.rmse(theta_scipy, X_test, y_test)}")
 
