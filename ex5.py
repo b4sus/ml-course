@@ -1,5 +1,3 @@
-from functools import partial
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as sio
@@ -78,7 +76,7 @@ def with_bias(X):
     return np.hstack((np.ones((X.shape[0], 1)), X))
 
 
-class LinearRegressionEstimatorPredictor(lc.EstimatorPredictor):
+class LinearRegressionEstimatorPredictor:
     def __init__(self, regularization_lambda=0):
         self.regularization_lambda = regularization_lambda
 
@@ -99,16 +97,9 @@ plt.figure(1)
 (j_train, j_cv) = lc.learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv,
                                                                     LinearRegressionEstimatorPredictor(), cost)
 
-(j_train, j_cv) = lc.learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv, minimize, cost_lire,
-                                                                    12)
-
 plt.figure(2)
-plt.plot(list(range(1, len(j_train) + 1)), j_train, label="j_train")
-plt.plot(list(range(1, len(j_train) + 1)), j_cv, label="j_cv")
-plt.xlabel("polynomial degree")
-plt.ylabel("error")
-plt.legend()
-plt.show()
+(j_train, j_cv) = lc.learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv,
+                                                                    LinearRegressionEstimatorPredictor(), cost, 12)
 
 poly_features = PolynomialFeatures(8, include_bias=False)
 X_train_poly = poly_features.fit_transform(X_train)
@@ -141,39 +132,24 @@ plt.plot(X_train, y_train, "rx")
 plt.plot(x_points, X_poly @ result.x)
 plt.show()
 
-(j_train, j_cv) = lc.learning_curves_of_different_training_set_size(X_train_poly, y_train, X_cv_poly, y_cv,
-                                                                    partial(minimize,
-                                                                            regularization_lambda=regularization_lambda),
-                                                                    cost_lire)
-
 plt.figure(4)
-plt.plot(list(range(1, len(j_train) + 1)), j_train, label="j_train")
-plt.plot(list(range(1, len(j_train) + 1)), j_cv, label="j_cv")
-plt.xlabel("training set size")
-plt.ylabel("error")
-plt.legend()
-plt.show()
-
-(j_train, j_cv, regularization_lambdas) = lc.learning_curves_of_different_lambda(X_train_poly, y_train, X_cv_poly, y_cv,
-                                                                                 minimize, cost_lire)
+(j_train, j_cv) = lc.learning_curves_of_different_training_set_size(X_train_poly, y_train, X_cv_poly, y_cv,
+                                                                    LinearRegressionEstimatorPredictor(
+                                                                        regularization_lambda),
+                                                                    cost)
 
 plt.figure(5)
-plt.plot(regularization_lambdas, j_train, label="j_train")
-plt.plot(regularization_lambdas, j_cv, label="j_cv")
-plt.xlabel("lambda")
-plt.ylabel("error")
-plt.legend()
-plt.show()
+(j_train, j_cv, regularization_lambdas) = lc.learning_curves_of_different_lambda(X_train_poly, y_train, X_cv_poly, y_cv,
+                                                                                 LinearRegressionEstimatorPredictor,
+                                                                                 cost)
 
-theta = minimize(with_bias(X_train_poly), y_train, 3)
 
-print(f"cv error: {cost(with_bias(X_cv_poly), y_cv, theta)}")
-print(f"test error: {cost(with_bias(X_test_poly), y_test, theta)}")
+# theta = minimize(with_bias(X_train_poly), y_train, 3)
+#
+# print(f"cv error: {cost(with_bias(X_cv_poly), y_cv, theta)}")
+# print(f"test error: {cost(with_bias(X_test_poly), y_test, theta)}")
 
-(j_train_means, j_cv_means) = lc.learning_curves_on_random_sets(X_train_poly, y_train, X_cv_poly, y_cv, minimize,
-                                                                cost_lire, 0.01)
+(j_train_means, j_cv_means) = lc.learning_curves_on_random_sets(X_train_poly, y_train, X_cv_poly, y_cv,
+                                                                LinearRegressionEstimatorPredictor(0.01),
+                                                                cost,)
 plt.figure(6)
-plt.plot(list(j_train_means.keys()), list(j_train_means.values()), label="j_train_means")
-plt.plot(list(j_cv_means.keys()), list(j_cv_means.values()), label="j_cv_means")
-plt.legend()
-plt.show()

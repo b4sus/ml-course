@@ -1,5 +1,6 @@
 from functools import partial
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.optimize as op
@@ -12,10 +13,9 @@ from sklearn.model_selection import GridSearchCV, StratifiedShuffleSplit
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler, PolynomialFeatures, MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler, PolynomialFeatures
 from sklearn.svm import SVR
 
-import ml.anomaly_detection as ad
 import ml.learning_curves as lc
 import ml.linear_regression as lire
 
@@ -136,15 +136,14 @@ def print_cv_scores(scores):
 
 
 def elastic_net(X, y):
-    elastic_net_cv = ElasticNetCV(cv=5, random_state=15, l1_ratio=0.01)
-    elastic_net_cv = Ridge()
+    elastic_net_cv = ElasticNetCV(cv=5, random_state=15, l1_ratio=0.9)
     elastic_net_cv.fit(X, y.ravel())
     print(f"Best alpha {elastic_net_cv.alpha_}")
     return elastic_net_cv
 
 
 def grid_search_ridge(X, y):
-    grid_search = GridSearchCV(Ridge(), [{"alpha": [0.1, 0.3, 0.5, 1], "solver":["sag", "cholesky"]}], cv=5,
+    grid_search = GridSearchCV(Ridge(), [{"alpha": [0.1, 0.3, 0.5, 1], "solver": ["sag", "cholesky"]}], cv=5,
                                scoring="neg_root_mean_squared_error",
                                return_train_score=True)
     grid_search.fit(X, y.reshape(-1))
@@ -162,6 +161,7 @@ def nn(X, y):
     mlp = MLPRegressor(hidden_layer_sizes=60, max_iter=20000)
     mlp.fit(X, y.ravel())
     return mlp
+
 
 def grid_search_k_neighbors(X, y):
     grid_search = GridSearchCV(KNeighborsRegressor(), [{"n_neighbors": range(1, 10)}], cv=5,
@@ -186,9 +186,8 @@ def grid_search_random_forest(X, y):
 
 
 def grid_search_svm(X, y):
-
     param_grid = [
-        {"C": [60, 70, 80, 90, 100, 110], "kernel":["rbf", "linear", "poly"]}
+        {"C": [60, 70, 80, 90, 100, 110], "kernel": ["rbf", "linear", "poly"]}
     ]
     grid_search = GridSearchCV(SVR(), param_grid, cv=5, scoring="neg_root_mean_squared_error",
                                return_train_score=True)
@@ -208,19 +207,20 @@ def preprocess_houses(houses):
     houses["RemodeledAgo"] = houses["YearRemodAdd"].max() - houses["YearRemodAdd"]
 
 
-def detect_anomalies(houses):
-    # houses_num = houses.select_dtypes(include=np.number).drop(["Id", "GarageYrBlt", "LotFrontage", "MasVnrArea"], axis=1)
-    houses_num = houses["SalePrice"]
-    X = houses_num.to_numpy(na_value=0).reshape((-1, 1))
-    mu, sigma2 = ad.estimate_gaussian(X)
-    p = ad.gaussian(X, mu, sigma2)
-    p
+def plot_learning_curves(X_train, y_train, X_test, y_test):
+    rmse = partial(mean_squared_error, squared=False)
+
+    # plt.figure(0)
+    # lc.learning_curves_of_different_training_set_size(X_train, y_train, X_test, y_test, Ridge(fit_intercept=False),
+    #                                                   rmse)
+    plt.figure(1)
+    lc.learning_curves_of_different_lambda(X_train, y_train, X_test, y_test, lambda alpha: Ridge(alpha=alpha), rmse,
+                                           [0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                                            20, 30, 40, 50, 100, 200, 300, 400, 500, 600, 700, 1000, 2000, 3000])
 
 
 if __name__ == "__main__":
     houses = pd.read_csv("house_prices/train.csv")
-
-    detect_anomalies(houses)
 
     prices = houses["SalePrice"]
 
@@ -250,6 +250,8 @@ if __name__ == "__main__":
 
     y_train = train_prices.to_numpy().reshape((-1, 1))
     X_train = train_transformed
+    poly_f = PolynomialFeatures(degree=2, include_bias=False)
+    poly_f.fit()
     # X_train = np.hstack((np.ones((X.shape[0], 1)), X_train))
 
     # theta_scipy = learn_manually_with_scipy(X_train, y_train, 1)
@@ -260,16 +262,15 @@ if __name__ == "__main__":
     #                          scoring="neg_mean_squared_error", cv=10)
     # print_cv_scores(np.sqrt(-scores))
 
-    best_estimator = elastic_net(X_train, y_train)
-    # best_estimator = grid_search_ridge(X_train, y_train)
+    # best_estimator = elastic_net(X_train, y_train)
+    best_estimator = grid_search_ridge(X_train, y_train)
     # best_estimator = nn(X_train, y_train)
 
     y_test = test_prices.to_numpy().reshape((-1, 1))
     X_test = full_pipeline.transform(test_houses)
     # X_test = np.hstack((np.ones((X_test.shape[0], 1)), X_test))
 
-    # lc.learning_curves_of_different_training_set_size(X_train, y_train, X_test, y_test, Ridge(solver="sag", fit_intercept=False),
-    #                                                   partial(mean_squared_error, squared=False))
+    # plot_learning_curves(X_train, y_train, X_test, y_test)
 
     # print(f"test set RMSE from learning manually is {lire.rmse(theta_scipy, X_test, y_test)}")
 

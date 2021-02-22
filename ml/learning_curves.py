@@ -5,13 +5,6 @@ from sklearn.preprocessing import PolynomialFeatures
 import ml.feature as feature
 
 
-class EstimatorPredictor:
-    def fit(self, X, y):
-        pass
-
-    def predict(self, X):
-        pass
-
 def learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv, estimator_predictor, cost_fun):
     """
     Trains theta with X_train and y_train using minimize_fun with different training size (1 to full).
@@ -20,8 +13,8 @@ def learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv,
     :param y_train:
     :param X_cv:
     :param y_cv:
-    :param minimize_fun: expected signature minimize_fun(X, y) -> theta
-    :param cost_fun: expected signature cost_fun(X, y, theta) -> float
+    :param estimator_predictor: has methods fit(X, y) and predict(X) -> y
+    :param cost_fun: expected signature cost_fun(y_true, y_pred) -> float
     :return: training errors, cross-validation errors
     """
     j_train = []
@@ -49,7 +42,7 @@ def learning_curves_of_different_training_set_size(X_train, y_train, X_cv, y_cv,
     return j_train, j_cv
 
 
-def learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun,
+def learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv, estimator_predictor, cost_fun,
                                                    max_polynomial_degree):
     """
     Trains theta with X_train and y_train using minimize_fun with different polynomial degree
@@ -58,8 +51,8 @@ def learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv,
     :param y_train:
     :param X_cv:
     :param y_cv:
-    :param minimize_fun: expected signature minimize_fun(X, y) -> theta
-    :param cost_fun: expected signature cost_fun(X, y, theta) -> float
+    :param estimator_predictor: has methods fit(X, y) and predict(X) -> y
+    :param cost_fun: expected signature cost_fun(y_true, y_pred) -> float
     :param max_polynomial_degree:
     :return: training errors, cross-validation errors
     """
@@ -75,20 +68,27 @@ def learning_curves_of_different_polynomial_degree(X_train, y_train, X_cv, y_cv,
 
         X_train_poly = np.hstack((np.ones((X_train_poly.shape[0], 1)), X_train_poly))
 
-        theta = minimize_fun(X_train_poly, y_train)
+        estimator_predictor.fit(X_train_poly, y_train)
 
-        j_train.append(cost_fun(X_train_poly, y_train, theta))
+        j_train.append(cost_fun(y_train, estimator_predictor.predict(X_train_poly)))
 
         X_cv_poly = poly_features.fit_transform(X_cv)
         X_cv_poly = normalizer.normalize_matrix(X_cv_poly)
         X_cv_poly = np.hstack((np.ones((X_cv_poly.shape[0], 1)), X_cv_poly))
 
-        j_cv.append(cost_fun(X_cv_poly, y_cv, theta))
+        j_cv.append(cost_fun(y_cv, estimator_predictor.predict(X_cv_poly)))
+
+    plt.plot(list(range(1, len(j_train) + 1)), j_train, label="j_train")
+    plt.plot(list(range(1, len(j_train) + 1)), j_cv, label="j_cv")
+    plt.xlabel("polynomial degree")
+    plt.ylabel("error")
+    plt.legend()
+    plt.show()
 
     return j_train, j_cv
 
 
-def learning_curves_of_different_lambda(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun,
+def learning_curves_of_different_lambda(X_train, y_train, X_cv, y_cv, estimator_predictor_factory, cost_fun,
                                         regularization_lambdas=None):
     """
     Trains theta with X_train and y_train using minimize_fun with different lambdas. Calculates and return training set
@@ -97,8 +97,9 @@ def learning_curves_of_different_lambda(X_train, y_train, X_cv, y_cv, minimize_f
     :param y_train:
     :param X_cv:
     :param y_cv:
-    :param minimize_fun: expected signature minimize_fun(X, y, regularization_lambda) -> theta
-    :param cost_fun: expected signature cost_fun(X, y, theta) -> float
+    :param estimator_predictor_factory: function taking lambda (regularization parameter) producing estimator_predictor,
+    has methods fit(X, y) and predict(X) -> y
+    :param cost_fun: expected signature cost_fun(y_true, y_pred) -> float
     :param regularization_lambdas: list of lambdas to try
     :return: training errors, cross-validation errors
     """
@@ -112,15 +113,36 @@ def learning_curves_of_different_lambda(X_train, y_train, X_cv, y_cv, minimize_f
     X_cv = np.hstack((np.ones((X_cv.shape[0], 1)), X_cv))
 
     for regularization_lambda in regularization_lambdas:
-        theta = minimize_fun(X_train, y_train, regularization_lambda)
+        estimator_predictor = estimator_predictor_factory(regularization_lambda)
+        estimator_predictor.fit(X_train, y_train)
 
-        j_train.append(cost_fun(X_train, y_train, theta))
-        j_cv.append(cost_fun(X_cv, y_cv, theta))
+        j_train.append(cost_fun(y_train, estimator_predictor.predict(X_train)))
+        j_cv.append(cost_fun(y_cv, estimator_predictor.predict(X_cv)))
+
+    plt.plot(regularization_lambdas, j_train, label="j_train")
+    plt.plot(regularization_lambdas, j_cv, label="j_cv")
+    plt.xlabel("lambda")
+    plt.ylabel("error")
+    plt.legend()
+    plt.show()
 
     return j_train, j_cv, regularization_lambdas
 
 
-def learning_curves_on_random_sets(X_train, y_train, X_cv, y_cv, minimize_fun, cost_fun, regularization_lambda=0):
+def learning_curves_on_random_sets(X_train, y_train, X_cv, y_cv, estimator_predictor, cost_fun, repeat=100):
+    """
+    Randomly chooses random number (size = 1 to len(train_set) + 1) of examples from train set snd cv set.
+    Then it learns, evaluates and stores costs per size.
+    Calculates mean per size and plots the result.
+    :param X_train:
+    :param y_train:
+    :param X_cv:
+    :param y_cv:
+    :param estimator_predictor: has methods fit(X, y) and predict(X) -> y
+    :param cost_fun: expected signature cost_fun(y_true, y_pred) -> float
+    :param repeat: defaults to 100
+    :return:
+    """
 
     X_train = np.hstack((np.ones((X_train.shape[0], 1)), X_train))
     X_cv = np.hstack((np.ones((X_cv.shape[0], 1)), X_cv))
@@ -129,21 +151,21 @@ def learning_curves_on_random_sets(X_train, y_train, X_cv, y_cv, minimize_fun, c
 
     j_train = {}
     j_cv = {}
-    for i in range(100):
+    for i in range(repeat):
         size = rng.integers(1, X_train.shape[0] + 1)
         indices = rng.choice(list(range(X_train.shape[0])), size, False)
         X_train_sub = X_train[indices, :]
         y_train_sub = y_train[indices, :]
-        theta = minimize_fun(X_train_sub, y_train_sub, regularization_lambda)
+        estimator_predictor.fit(X_train_sub, y_train_sub)
 
         j_train_for_size = j_train.get(size, np.array([]))
-        j_train_for_size = np.append(j_train_for_size, cost_fun(X_train_sub, y_train_sub, theta))
+        j_train_for_size = np.append(j_train_for_size, cost_fun(y_train_sub, estimator_predictor.predict(X_train_sub)))
         j_train[size] = j_train_for_size
 
         X_cv_sub = X_cv[indices, :]
         y_cv_sub = y_cv[indices, :]
         j_cv_for_size = j_cv.get(size, np.array([]))
-        j_cv_for_size = np.append(j_cv_for_size, cost_fun(X_cv_sub, y_cv_sub, theta))
+        j_cv_for_size = np.append(j_cv_for_size, cost_fun(y_cv_sub, estimator_predictor.predict(X_cv_sub)))
         j_cv[size] = j_cv_for_size
 
     j_train_means = {size: costs.mean() for size, costs in j_train.items()}
@@ -156,5 +178,12 @@ def learning_curves_on_random_sets(X_train, y_train, X_cv, y_cv, minimize_fun, c
     j_cv_means_sorted_by_size = {}
     for size in sorted(j_cv_means):
         j_cv_means_sorted_by_size[size] = j_cv_means[size]
+
+    plt.plot(list(j_train_means_sorted_by_size.keys()), list(j_train_means_sorted_by_size.values()), label="j_train_means")
+    plt.plot(list(j_cv_means_sorted_by_size.keys()), list(j_cv_means_sorted_by_size.values()), label="j_cv_means")
+    plt.xlabel("training set size")
+    plt.ylabel("error")
+    plt.legend()
+    plt.show()
 
     return j_train_means_sorted_by_size, j_cv_means_sorted_by_size
