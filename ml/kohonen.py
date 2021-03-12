@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 
 
@@ -30,35 +32,64 @@ class KohonenMap:
         learning_rate = self.init_learning_rate
         sigma = self.init_sigma
 
-        self.observer(X=X, map_length=self.map_length, iter=self.iteration, Thetas=self.Thetas,
-                      learning_rate=learning_rate, sigma=sigma, X_repr=X_repr)
+        # self.observer(X=X, map_length=self.map_length, iter=self.iteration, Thetas=self.Thetas,
+        #               learning_rate=learning_rate, sigma=sigma, X_repr=X_repr)
 
+        self.coords = np.empty((self.map_length, self.map_length, 2))
+        for neuron_x in range(self.map_length):
+            for neuron_y in range(self.map_length):
+                self.coords[neuron_x, neuron_y] = np.array([neuron_x, neuron_y])
 
         while self.iteration < self.max_iter:
             x = X[self.rng.integers(0, len(X))]
-            bmu_coords = np.unravel_index(np.argmin(np.linalg.norm(self.Thetas - x, axis=2)), (self.map_length, self.map_length))
-            # bmu_score = np.inf
-            # bmu_coords = None
-            # for neuron_x in range(self.map_length):
-            #     for neuron_y in range(self.map_length):
-            #         theta = self.Thetas[neuron_x, neuron_y]
-            #         score = np.linalg.norm(x - theta)
-            #         if score < bmu_score:
-            #             bmu_coords = (neuron_x, neuron_y)
-            #             bmu_score = score
-            neighbourhoods = np.empty((self.map_length, self.map_length))
-            for neuron_x in range(self.map_length):
-                for neuron_y in range(self.map_length):
-                    n = self.neighbourhood(bmu_coords, (neuron_x, neuron_y), sigma)
-                    neighbourhoods[neuron_x, neuron_y] = n
-                    self.Thetas[neuron_x, neuron_y] += learning_rate * n * (x - self.Thetas[neuron_x, neuron_y])
+            bmu_coords = self.find_bmu_using_np(x)
+            Deltas, neighbourhoods = self.find_deltas_using_np(x, bmu_coords, learning_rate, sigma, nr_features)
+
+            self.Thetas += Deltas
 
             self.iteration += 1
             learning_rate = self.learning_rate()
             sigma = self.sigma()
+
             self.observer(X=X, map_length=self.map_length, iter=self.iteration, Thetas=self.Thetas,
                           learning_rate=learning_rate, sigma=sigma,
                           neighbour_change=self.direct_neighbour(neighbourhoods, bmu_coords), X_repr=X_repr)
+
+    def find_deltas_using_np(self, x, bmu_coords, learning_rate, sigma, nr_features):
+        D = np.linalg.norm(np.array(bmu_coords) - self.coords, axis=2)
+        N = np.exp(-(D ** 2) / (sigma ** 2))
+        Deltas = np.empty((self.map_length, self.map_length, nr_features))
+        for neuron_x in range(self.map_length):
+            for neuron_y in range(self.map_length):
+                Deltas[neuron_x, neuron_y] = learning_rate * N[neuron_x, neuron_y] * (x - self.Thetas[neuron_x, neuron_y])
+        return Deltas, N
+
+    def find_deltas_using_loops(self, x, bmu_coords, learning_rate, sigma, nr_features):
+        Deltas = np.empty((self.map_length, self.map_length, nr_features))
+        Neighbourhoods = np.empty((self.map_length, self.map_length))
+        for neuron_x in range(self.map_length):
+            for neuron_y in range(self.map_length):
+                n = self.neighbourhood(bmu_coords, (neuron_x, neuron_y), sigma)
+                Neighbourhoods[neuron_x, neuron_y] = n
+                Deltas[neuron_x, neuron_y] = learning_rate * n * (x - self.Thetas[neuron_x, neuron_y])
+        return Deltas, Neighbourhoods
+
+    def find_bmu_using_np(self, x):
+        return np.unravel_index(np.argmin(np.linalg.norm(self.Thetas - x, axis=2)), (self.map_length, self.map_length))
+
+    def find_bmu_using_loops(self, x):
+        bmu_score = np.inf
+        bmu_coords = None
+        for neuron_x in range(self.map_length):
+            for neuron_y in range(self.map_length):
+                theta = self.Thetas[neuron_x, neuron_y]
+                # score = np.linalg.norm(x - theta)
+                # no need to root square - slightly faster
+                score = ((x - theta) ** 2).sum()
+                if score < bmu_score:
+                    bmu_coords = (neuron_x, neuron_y)
+                    bmu_score = score
+        return bmu_coords
 
     def direct_neighbour(self, neighbourhoods, bmu_coords):
         bmu_x, bmu_y = bmu_coords
@@ -72,7 +103,7 @@ class KohonenMap:
     def learning_rate(self):
         return self.init_learning_rate * np.exp(-self.iteration / self.learning_rate_constant)
 
-    def neighbourhood(self, bmu_coords, current_neuron, sigma, neighbour_change=-1):
+    def neighbourhood(self, bmu_coords, current_neuron, sigma):
         d = np.linalg.norm(np.array(bmu_coords) - np.array(current_neuron))
         return np.exp(-(d ** 2) / (sigma ** 2))
 
