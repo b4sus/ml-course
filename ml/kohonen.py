@@ -25,7 +25,8 @@ class KohonenMap:
         self.max_iter = max_iter if max_iter is not None else 500 * map_length * map_length
         self.observer = observer
 
-    def fit(self, X, X_repr=None):
+    def fit(self, X, *args, **kwargs):
+        X_repr = kwargs["X_repr"]
         nr_features = X.shape[1]
         self.Thetas = self.rng.uniform(size=(self.map_length, self.map_length, nr_features))
         self.iteration = 0
@@ -54,6 +55,10 @@ class KohonenMap:
             self.observer(X=X, map_length=self.map_length, iter=self.iteration, Thetas=self.Thetas,
                           learning_rate=learning_rate, sigma=sigma,
                           neighbour_change=self.direct_neighbour(neighbourhoods, bmu_coords), X_repr=X_repr)
+        return self
+
+    def transform(self, X, *args, **kwargs):
+        return X
 
     def find_deltas_using_np(self, x, bmu_coords, learning_rate, sigma, nr_features):
         D = np.linalg.norm(np.array(bmu_coords) - self.coords, axis=2)
