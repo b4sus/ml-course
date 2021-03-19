@@ -61,6 +61,17 @@ class KohonenMap:
         return X
 
     def find_deltas_using_np(self, x, bmu_coords, learning_rate, sigma, nr_features):
+        """
+        For each neuron in map calculates its change given sample x, bmu coordinates and current learning_rate and sigma.
+        Formula: change_for_theta_x_y = learning_rate * n_x_y * (x - theta_x_y)
+        where n_x_y is result of neighbourhood formula: exp(norm(bmu_coords - [x, y]]) ** 2 / (sigma ** 2))
+        :param x:
+        :param bmu_coords:
+        :param learning_rate:
+        :param sigma:
+        :param nr_features:
+        :return: matrix of changes for thetas, matrix of neighbourhoods
+        """
         D = np.linalg.norm(np.array(bmu_coords) - self.coords, axis=2)
         N = np.exp(-(D ** 2) / (sigma ** 2))
         Deltas = np.empty((self.map_length, self.map_length, nr_features))
@@ -70,6 +81,9 @@ class KohonenMap:
         return Deltas, N
 
     def find_deltas_using_loops(self, x, bmu_coords, learning_rate, sigma, nr_features):
+        """
+        Easier to read, not vectorized (slower), veresion of find_deltas_using_np
+        """
         Deltas = np.empty((self.map_length, self.map_length, nr_features))
         Neighbourhoods = np.empty((self.map_length, self.map_length))
         for neuron_x in range(self.map_length):
@@ -80,9 +94,15 @@ class KohonenMap:
         return Deltas, Neighbourhoods
 
     def find_bmu_using_np(self, x):
+        """
+        Finds the best matching unit in map for given sample x
+        """
         return np.unravel_index(np.argmin(np.linalg.norm(self.Thetas - x, axis=2)), (self.map_length, self.map_length))
 
     def find_bmu_using_loops(self, x):
+        """
+        Easier to read, not vectorized (slower), veresion of find_bmu_using_np
+        """
         bmu_score = np.inf
         bmu_coords = None
         for neuron_x in range(self.map_length):
@@ -97,6 +117,9 @@ class KohonenMap:
         return bmu_coords
 
     def direct_neighbour(self, neighbourhoods, bmu_coords):
+        """
+        Returns neighbourhood value for direct neighbour - for debug purpose only
+        """
         bmu_x, bmu_y = bmu_coords
         assert neighbourhoods[bmu_x, bmu_y] == 1
         if bmu_x < self.map_length - 1:
@@ -106,11 +129,31 @@ class KohonenMap:
         return neighbourhoods[neighbour_x, bmu_y]
 
     def learning_rate(self):
-        return self.init_learning_rate * np.exp(-self.iteration / self.learning_rate_constant)
+        return max(self.init_learning_rate * np.exp(-self.iteration / self.learning_rate_constant), 0.1)
 
     def neighbourhood(self, bmu_coords, current_neuron, sigma):
         d = np.linalg.norm(np.array(bmu_coords) - np.array(current_neuron))
         return np.exp(-(d ** 2) / (sigma ** 2))
 
     def sigma(self):
-        return self.init_sigma * np.exp(-self.iteration / self.sigma_constant)
+        return max(self.init_sigma * np.exp(-self.iteration / self.sigma_constant), 1)
+
+
+class TrainedKohonenMap:
+    def __init__(self, Thetas):
+        self.Thetas = Thetas
+        self.map_length = Thetas.shape[0]
+        self.nr_of_features = Thetas.shape[2]
+
+    def fit(self, *args):
+        return self
+
+    def transform(self, X):
+        X_transformed = np.empty(shape=len(X), dtype=object)
+        for i, x in enumerate(X):
+            X_transformed[i] = np.unravel_index(np.argmin(np.linalg.norm(self.Thetas - x, axis=2)), (self.map_length,
+                                                                                                     self.map_length))
+        return X_transformed
+
+    def predict(self, X):
+        pass

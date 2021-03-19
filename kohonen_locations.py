@@ -1,6 +1,7 @@
+import datetime
+import os.path
 import re
 import time
-import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,62 +29,120 @@ def preprocess(word):
     return word
 
 
-start = time.process_time()
-elapsed_times = []
 
 
-def draw(X, map_length, iter, Thetas, learning_rate, sigma, X_repr, neighbour_change=-1):
-    global elapsed_times, start
-    elapsed_times.append(time.process_time() - start)
-    if len(elapsed_times) % 10 == 0:
-        print(f"{datetime.datetime.now()}: iteration {iter}, learning_rate:{learning_rate}, sigma: {sigma}, "
-              f"neighbour_change: {neighbour_change} mean for one training sample: {np.mean(elapsed_times)}")
-        elapsed_times.clear()
-    if iter in (1000, 10000, 50000, 120000):
-        map = np.empty((map_length, map_length), dtype=object)
-        for i, x in enumerate(X):
-            bmu_coords = np.unravel_index(np.argmin(np.linalg.norm(Thetas - x, axis=2)), (map_length, map_length))
-            if map[bmu_coords[0], bmu_coords[1]] is None:
-                map[bmu_coords[0], bmu_coords[1]] = []
-            map[bmu_coords[0], bmu_coords[1]].append(X_repr[i])
+class Observer:
+    def __init__(self):
+        plt.ion()
+        self.fig, self.ax = plt.subplots()
+        self.start = time.process_time()
+        self.elapsed_times = []
 
-        plt.title(
-            f"Iteration {iter} - learning rate {learning_rate:.3f}, sigma {sigma:.3f}, "
-            + f"neighbour_change {neighbour_change:.3f}")
-        for neuron_x in range(map_length):
-            for neuron_y in range(map_length):
-                items = map[neuron_x, neuron_y]
-                if items:
-                    ax.text(neuron_x / map_length, neuron_y / map_length, str(len(items)) + " " + "\n".join(items[:3]),
-                            fontsize='xx-small')
-        fig.canvas.draw()
-        fig.canvas.flush_events()
-        ax.clear()
-    start = time.process_time()
+    def __call__(self, X, map_length, iter, Thetas, learning_rate, sigma, X_repr, neighbour_change=-1):
+        self.elapsed_times.append(time.process_time() - self.start)
+        if len(self.elapsed_times) % 10 == 0:
+            print(f"{datetime.datetime.now()}: iteration {iter}, learning_rate:{learning_rate}, sigma: {sigma}, "
+                  f"neighbour_change: {neighbour_change} mean for one training sample: {np.mean(self.elapsed_times)}")
+            self.elapsed_times.clear()
+        if False and iter in (1000, 10000, 50000, 120000):
+            map = np.empty((map_length, map_length), dtype=object)
+            for i, x in enumerate(X):
+                bmu_coords = np.unravel_index(np.argmin(np.linalg.norm(Thetas - x, axis=2)), (map_length, map_length))
+                if map[bmu_coords[0], bmu_coords[1]] is None:
+                    map[bmu_coords[0], bmu_coords[1]] = []
+                map[bmu_coords[0], bmu_coords[1]].append(X_repr[i])
+
+            plt.title(
+                f"Iteration {iter} - learning rate {learning_rate:.3f}, sigma {sigma:.3f}, "
+                + f"neighbour_change {neighbour_change:.3f}")
+            for neuron_x in range(map_length):
+                for neuron_y in range(map_length):
+                    items = map[neuron_x, neuron_y]
+                    if items:
+                        self.ax.text(neuron_x / map_length, neuron_y / map_length, str(len(items)) + " " + "\n".join(items[:3]),
+                                fontsize='xx-small')
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+            self.ax.clear()
+        self.start = time.process_time()
 
 
-if __name__ == "__main__":
-    # if os.path.exists("locations.npy"):
-    #     X = np.load("locations.npy")
-    # else:
+def train():
+    locations = load_preprocess_locations()
+    word_2_gramer = boc.WordNGramer(3)
+
+    map = kh.KohonenMap(70, learning_rate_constant=25_000, init_sigma=15, sigma_constant=15_000, observer=Observer(),
+                        max_iter=100000)
+    # map.fit(X, locations)
+    pipeline = make_pipeline(word_2_gramer, MinMaxScaler(), map)
+    pipeline.fit_transform(locations, kohonenmap__X_repr=locations)
+    np.save(versioned_file_name("kohonen_locations_trained_thetas"), map.Thetas)
+
+
+def load_preprocess_locations():
     locations = []
     with open("data/locations.csv", encoding="utf-8") as locations_file:
         for loc in locations_file:
             locations.append(preprocess(loc))
-    word_2_gramer = boc.WordNGramer(2)
-    # locations = np.random.default_rng().permutation(locations)
-    # word_2_gramer.fit(locations)
-    # print(f"corpus len {len(word_2_gramer.corpus)}")
-    # print(word_2_gramer.corpus)
-    # X = word_2_gramer.transform(locations)
+    return locations
 
-    # np.save("locations", X)
 
-    plt.ion()
-    fig, ax = plt.subplots()
-    map = kh.KohonenMap(100, learning_rate_constant=50000, init_sigma=20, sigma_constant=35000, observer=draw,
-                        max_iter=140000)
-    # map.fit(X, locations)
-    pipeline = make_pipeline(word_2_gramer, MinMaxScaler(), map)
-    pipeline.fit_transform(locations, kohonenmap__X_repr=locations)
-    np.save("Thetas", map.Thetas)
+def predict(word):
+    locations = load_preprocess_locations()
+    Thetas = np.load(versioned_file_name("kohonen_locations_trained_thetas.npy"))
+    trained_map = kh.TrainedKohonenMap(Thetas)
+
+    preprocess_pipeline = make_pipeline(boc.WordNGramer(3), MinMaxScaler(), trained_map)
+    preprocess_pipeline.fit(locations)
+
+    if os.path.exists(versioned_file_name("location_positions.npy")):
+        location_positions = np.load(versioned_file_name("location_positions.npy"), allow_pickle=True)
+    else:
+        location_positions = preprocess_pipeline.transform(locations)
+        np.save(versioned_file_name("location_positions"), location_positions)
+
+    map_length = len(Thetas)
+    coords = np.empty((map_length, map_length, 2))
+    for neuron_x in range(map_length):
+        for neuron_y in range(map_length):
+            coords[neuron_x, neuron_y] = np.array([neuron_x, neuron_y])
+
+    map = np.empty((map_length, map_length), dtype=object)
+    for location, position in zip(locations, location_positions):
+        x, y = position
+        if map[x, y] is None:
+            map[x, y] = []
+        map[x, y].append(location)
+
+    transformed_samples = preprocess_pipeline.transform([word])
+
+    generator = generate_closest(transformed_samples[0], coords, map)
+
+    for i in range(30):
+        print(next(generator))
+
+
+def generate_closest(sample, coords, location_map):
+    start = time.process_time()
+    D = np.linalg.norm(sample - coords, axis=2)
+    xs, ys = np.unravel_index(np.argsort(D, axis=None), D.shape)
+    print(time.process_time() - start)
+    for x, y in zip(xs, ys):
+        if location_map[x, y] is not None:
+            for loc in location_map[x, y]:
+                yield loc
+
+
+def versioned_file_name(file_name):
+    if "." in file_name:
+        base_name, suffix = file_name.rsplit(".", maxsplit=1)
+        return base_name + version + "." + suffix
+    else:
+        return file_name + version
+
+
+if __name__ == "__main__":
+    version = "3gram"
+    if not os.path.exists(versioned_file_name("kohonen_locations_trained_thetas.npy")):
+        train()
+    predict("madbur")
