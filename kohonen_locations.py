@@ -69,7 +69,7 @@ class Observer:
 
 def train():
     locations = load_preprocess_locations()
-    word_2_gramer = boc.WordNGramer(3)
+    word_2_gramer = boc.WordNGramer(2)
 
     map = kh.KohonenMap(70, learning_rate_constant=25_000, init_sigma=15, sigma_constant=15_000, observer=Observer(),
                         max_iter=100000)
@@ -92,7 +92,7 @@ def predict(word):
     Thetas = np.load(versioned_file_name("kohonen_locations_trained_thetas.npy"))
     trained_map = kh.TrainedKohonenMap(Thetas)
 
-    preprocess_pipeline = make_pipeline(boc.WordNGramer(3), MinMaxScaler(), trained_map)
+    preprocess_pipeline = make_pipeline(boc.WordNGramer(1), MinMaxScaler(), trained_map)
     preprocess_pipeline.fit(locations)
 
     if os.path.exists(versioned_file_name("location_positions.npy")):
@@ -142,7 +142,7 @@ def versioned_file_name(file_name):
 
 
 if __name__ == "__main__":
-    version = "3gram"
+    version = "1gram"
     if not os.path.exists(versioned_file_name("kohonen_locations_trained_thetas.npy")):
         train()
-    predict("madbur")
+    predict("hechngeli")
