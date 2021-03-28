@@ -99,7 +99,7 @@ class Pipeline:
         for distinct_output in distinct_outputs:
             y_single_output = np.zeros(m)
             y_single_output[y_flat == distinct_output] = 1
-            (theta, X_processed) = self.execute_train(X, y_single_output.reshape((m, 1)), regularization=regularization)
+            (theta, X_processed) = self.execute_train(X, y_single_output.reshape((m, 1)), regularization_lambda=regularization)
             thetas.append(theta)
 
         return thetas
