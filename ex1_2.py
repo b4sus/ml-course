@@ -5,7 +5,7 @@ import ml.linear_regression as lire
 from ml.gradient_descent import gradient_descent
 import ml.feature as ft
 
-data = np.loadtxt("data/ex1data2.txt", delimiter=",")
+data = np.loadtxt("ml_course_material/machine-learning-ex1/ex1/ex1data2.txt", delimiter=",")
 
 (m, feature_length_with_result) = data.shape
 

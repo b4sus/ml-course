@@ -6,7 +6,7 @@ import ml.feature as ft
 import ml.logistic_regression as lore
 import ml.predict as predict
 
-data = np.loadtxt("data/ex2data1.txt", delimiter=",")
+data = np.loadtxt("ml_course_material/machine-learning-ex2/ex2/ex2data1.txt", delimiter=",")
 
 (m, feature_length_with_result) = data.shape
 

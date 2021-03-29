@@ -43,6 +43,7 @@ def linear_regression_cost_gradient(theta, X, y, regularization_lambda=0):
     gradient = linear_regression_cost_derivative(X, y, theta, regularization_lambda)
     return cost, gradient.reshape((-1))
 
+
 def rmse(theta, X, y):
     h_x = X @ theta
     return np.sqrt(((y - h_x) ** 2).sum() / len(y))
