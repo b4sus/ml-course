@@ -1,4 +1,4 @@
-# mlplay
+# ml-course
 My rework of th machine learning course from andrew ng into python
 
 * ml/linear_regression.py - cost and gradient function for linear regression
